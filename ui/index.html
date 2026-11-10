@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sieve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<!--
+  THIS IS THE TEMPLATE. Make it yours: tell your agent "change my Sieve UI so …"
+  (it edits ui/), or edit index.html / style.css / app.js yourself. Refresh to see it.
+-->
+</head>
+<body>
+<header class="bar">
+  <div class="brand">Sieve <span>your X, your rules</span></div>
+  <div class="spacer"></div>
+  <button class="agent" id="agentPill" title="Your agent's status"><i></i><span>Agent offline</span></button>
+  <button class="ghost" id="hiddenBtn">0 hidden</button>
+  <button class="ghost" id="rulesBtn">Rules</button>
+</header>
+
+<div class="template-note" id="templateNote">
+  <b>This is the template.</b> Ask your agent to change anything: <code>"change my Sieve UI to a three-column magazine"</code>, <code>"show images big and text small"</code>, <code>"add a reading-time badge"</code>. It edits the <code>ui/</code> folder.
+  <button class="x" id="noteX" title="Hide">✕</button>
+</div>
+
+<main class="feed">
+  <button class="newpill" id="newPill" hidden>New posts</button>
+  <div id="empty" class="empty" hidden></div>
+  <div id="posts"></div>
+  <button class="more" id="more">Ask the agent for more</button>
+</main>
+
+<!-- rules drawer -->
+<aside class="drawer" id="rules" hidden>
+  <div class="drawer-head"><b>Your rules</b><button class="x" data-close>✕</button></div>
+  <p class="dim">Plain words. Your agent re-reads this before every scroll. Hidden posts show up under “hidden” with the reason.</p>
+  <textarea id="rulesText" spellcheck="false"></textarea>
+  <button class="primary" id="rulesSave">Save rules</button>
+</aside>
+
+<!-- hidden drawer -->
+<aside class="drawer" id="hidden" hidden>
+  <div class="drawer-head"><b>What your agent hid</b><button class="x" data-close>✕</button></div>
+  <div id="hiddenList"></div>
+</aside>
+
+<div class="toast" id="toast" hidden></div>
+<script src="app.js"></script>
+</body>
+</html>

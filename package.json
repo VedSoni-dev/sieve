@@ -1,0 +1,12 @@
+{
+  "name": "sieve",
+  "version": "0.1.0",
+  "description": "Turn social media into your personal media: your agent scrolls X for you, filters it by your rules, and you use it through a UI you design.",
+  "license": "MIT",
+  "bin": { "sieve": "bin/sieve.js" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/"
+  },
+  "engines": { "node": ">=20" }
+}
