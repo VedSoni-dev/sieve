@@ -59,6 +59,12 @@
     if (!canvas) { canvas = document.createElement('canvas'); fig.prepend(canvas); }
     try {
       const img = await load(src);
+      // A single photo keeps its real shape (X only crops in multi-photo grids). Very tall ones are capped and centered.
+      if (fig.closest('.media.n1') && img.naturalWidth && img.naturalHeight) {
+        const ratio = img.naturalWidth / img.naturalHeight;
+        fig.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
+        fig.style.maxWidth = `${Math.round(620 * ratio)}px`;
+      }
       colors = colors || inks();
       paint(canvas, img, { pixel: Number(fig.dataset.pixel) || 2, colors });
       fig.classList.add('ready');

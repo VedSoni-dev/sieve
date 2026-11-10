@@ -2,6 +2,10 @@
 
 **Turn social media into your personal media.**
 
+![Sieve: an agent-filtered X feed with dithered photos. Hover develops the real photo, a like goes out to X, and the sifted-out panel shows why posts were hidden.](docs/demo.gif)
+
+<sub>Demo with public accounts (NASA, NatGeo, The Verge, NYT, Anthropic, OpenAI) and the rule “hide anything about AI”. [MP4](docs/demo.mp4)</sub>
+
 Your coding agent scrolls X for you, in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **your** feed at `localhost:4545`, in a UI you design.
 
 It works the other way too. When you like, repost, quote, reply or bookmark in your feed, the agent does it on real X for you, so the algorithm learns what you actually want. You never open X again.

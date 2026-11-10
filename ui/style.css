@@ -87,7 +87,8 @@ body.nodither figure.dither canvas { visibility: hidden; }
 @media (hover: hover) { figure.dither.reveal:hover img { opacity: 1; } }
 .media { display: grid; gap: 3px; margin-top: 12px; border-radius: 4px; overflow: hidden; }
 .media figure { aspect-ratio: 16 / 10; }
-.media.n1 figure { aspect-ratio: 4 / 3; max-height: 520px; }
+.media.n1 { background: var(--paper-2); }
+.media.n1 figure { aspect-ratio: 4 / 3; width: 100%; margin: 0 auto; }
 .media.n2, .media.n3, .media.n4 { grid-template-columns: 1fr 1fr; }
 .media.n3 figure:first-child { grid-row: span 2; aspect-ratio: auto; }
 .media .play { position: absolute; left: 10px; bottom: 10px; z-index: 2; font: .66rem var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--paper); background: var(--ink); padding: 5px 8px; border-radius: 3px; }
