@@ -65,8 +65,10 @@ try {
   await post.waitFor({ timeout: 8000 });
   // Signed-in X has no data-engagement-action hooks: fall back to the post's button group (reply, repost, like, bookmark, share).
   const ORDER = { reply: 0, retweet: 1, like: 2, bookmark: 3 };
-  const btn = (action) => post.locator('[data-engagement-action="' + action + '"] button, [data-engagement-action="' + action + '"] a')
-    .or(post.locator('[role="group"]').last().locator(':scope > div > button, :scope > div > a, :scope button, :scope a').nth(ORDER[action])).first();
+  const hooked = (await post.locator('[data-engagement-action]').count()) > 0;
+  const btn = (action) => hooked
+    ? post.locator('[data-engagement-action="' + action + '"]').locator('button, a').first()
+    : post.locator('[role="group"]').last().locator('button, a').nth(ORDER[action]);
   const ON = /(^|\. )(Liked|Unlike|Reposted|Undo repost|Bookmarked|Remove Bookmark)/i;
   const isOn = async (action) => { const b = btn(action); const p = await b.getAttribute('aria-pressed'); const l = (await b.getAttribute('aria-label')) || ''; return p === 'true' || ON.test(l); };
   const labelOf = async (action) => (await btn(action).getAttribute('aria-label')) || '';
