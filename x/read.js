@@ -28,10 +28,13 @@
   // X post ids are Snowflake ids: creation time is baked in.
   const snowflakeTime = (id) => { try { return Number((BigInt(id) >> 22n) + 1288834974657n); } catch { return null; } };
 
+  const ORDER = { reply: 0, retweet: 1, like: 2, bookmark: 3 };
   const pressed = (a, action) => {
-    const el = own(a, `[data-engagement-action="${action}"] button, [data-engagement-action="${action}"] a`)[0];
+    const grp = own(a, '[role="group"]').pop();
+    const el = own(a, `[data-engagement-action="${action}"] button, [data-engagement-action="${action}"] a`)[0]
+      || (grp ? [...grp.querySelectorAll('button, a')][ORDER[action]] : null);
     if (!el) return false;
-    return el.getAttribute('aria-pressed') === 'true' || /^(Unlike|Liked|Undo repost|Reposted|Remove Bookmark|Bookmarked)/i.test(el.getAttribute('aria-label') || '');
+    return el.getAttribute('aria-pressed') === 'true' || /(^|\. )(Unlike|Liked|Undo repost|Reposted|Remove Bookmark|Bookmarked)/i.test(el.getAttribute('aria-label') || '');
   };
 
   function post(a) {

@@ -63,8 +63,13 @@ try {
   if (await page.evaluate(() => !!document.querySelector('a[href*="mode=login"]'))) throw new Error('not signed in to X in this browser');
   const post = page.locator('article').filter({ has: page.locator('a[href$="/status/${id}"]') }).first();
   await post.waitFor({ timeout: 8000 });
-  const btn = (action) => post.locator('[data-engagement-action="' + action + '"]').locator('button, a').first();
-  const isOn = async (action) => { const b = btn(action); const p = await b.getAttribute('aria-pressed'); const l = (await b.getAttribute('aria-label')) || ''; return p === 'true' || /^(Unlike|Liked|Undo repost|Reposted|Remove Bookmark|Bookmarked)/i.test(l); };
+  // Signed-in X has no data-engagement-action hooks: fall back to the post's button group (reply, repost, like, bookmark, share).
+  const ORDER = { reply: 0, retweet: 1, like: 2, bookmark: 3 };
+  const btn = (action) => post.locator('[data-engagement-action="' + action + '"] button, [data-engagement-action="' + action + '"] a')
+    .or(post.locator('[role="group"]').last().locator(':scope > div > button, :scope > div > a, :scope button, :scope a').nth(ORDER[action])).first();
+  const ON = /(^|\. )(Liked|Unlike|Reposted|Undo repost|Bookmarked|Remove Bookmark)/i;
+  const isOn = async (action) => { const b = btn(action); const p = await b.getAttribute('aria-pressed'); const l = (await b.getAttribute('aria-label')) || ''; return p === 'true' || ON.test(l); };
+  const labelOf = async (action) => (await btn(action).getAttribute('aria-label')) || '';
   const toggle = async (action, want) => { if ((await isOn(action)) !== want) { await btn(action).click(); await sleep(1200); } out.ok = (await isOn(action)) === want; out.state = want; };
   const T = ${JSON.stringify(type)}, TEXT = ${JSON.stringify(text)};
   if (T === 'like') await toggle('like', true);
@@ -91,7 +96,7 @@ try {
     await sleep(2500);
     out.ok = !(await dlg.isVisible().catch(() => false));
   }
-  if (!out.ok) out.error = 'X did not show the expected state afterwards';
+  if (!out.ok) out.error = 'X did not show the expected state afterwards (' + (await labelOf(T === 'like' || T === 'unlike' ? 'like' : T.includes('bookmark') ? 'bookmark' : 'retweet').catch(() => '')) + ')';
 } catch (e) { out.error = String(e.message || e).slice(0, 300); }
 try { await closeTab(page); } catch {}
 console.log('@@SIEVE@@' + JSON.stringify(out));
