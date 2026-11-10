@@ -62,6 +62,12 @@ test('wait returns as soon as the user clicks', async () => {
   assert.equal(r.body.actions[0].type, 'bookmark');
 });
 
+test('wait returns immediately when a click is already queued (no crash)', async () => {
+  const r = await call('GET', '/api/actions/wait?timeout=20');
+  assert.ok(r.body.actions.length >= 1);
+  assert.equal((await call('GET', '/api/state')).status, 200);
+});
+
 test('rules round-trip and agent heartbeat', async () => {
   await call('PUT', '/api/rules', { text: 'no AI' });
   assert.equal((await call('GET', '/api/rules')).body.text, 'no AI');

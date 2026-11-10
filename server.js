@@ -162,9 +162,10 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/actions/wait') {
     const t = Math.min(115, Math.max(1, Number(url.searchParams.get('timeout')) || 55)) * 1000;
     const pendingNow = () => db.actions.filter(a => a.status === 'pending');
+    let timer = null;
     const finish = () => { clearTimeout(timer); waiters.delete(finish); if (!res.writableEnded) { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ actions: pendingNow() })); } };
     if (pendingNow().length) return finish();
-    const timer = setTimeout(finish, t);
+    timer = setTimeout(finish, t);
     waiters.add(finish);
     req.on('close', () => { clearTimeout(timer); waiters.delete(finish); });
     return;

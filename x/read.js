@@ -28,13 +28,16 @@
   // X post ids are Snowflake ids: creation time is baked in.
   const snowflakeTime = (id) => { try { return Number((BigInt(id) >> 22n) + 1288834974657n); } catch { return null; } };
 
-  const ORDER = { reply: 0, retweet: 1, like: 2, bookmark: 3 };
+  const SEL = {
+    like: '[data-testid="like"], [data-testid="unlike"], [data-engagement-action="like"] button, button[aria-label$=". Like"], button[aria-label$=". Liked"]',
+    retweet: '[data-testid="retweet"], [data-testid="unretweet"], [data-engagement-action="retweet"] button, button[aria-label$=". Repost"], button[aria-label$=". Reposted"]',
+    bookmark: '[data-testid="bookmark"], [data-testid="removeBookmark"], [data-engagement-action="bookmark"] button, button[aria-label$=". Bookmark"], button[aria-label$=". Bookmarked"]',
+  };
   const pressed = (a, action) => {
-    const grp = own(a, '[role="group"]').pop();
-    const el = own(a, `[data-engagement-action="${action}"] button, [data-engagement-action="${action}"] a`)[0]
-      || (grp ? [...grp.querySelectorAll('button, a')][ORDER[action]] : null);
+    const el = own(a, SEL[action])[0];
     if (!el) return false;
-    return el.getAttribute('aria-pressed') === 'true' || /(^|\. )(Unlike|Liked|Undo repost|Reposted|Remove Bookmark|Bookmarked)/i.test(el.getAttribute('aria-label') || '');
+    return el.getAttribute('aria-pressed') === 'true' || /^(unlike|unretweet|removeBookmark)$/.test(el.dataset.testid || '')
+      || /(^|\. )(Unlike|Liked|Undo repost|Reposted|Remove Bookmark|Bookmarked)$/i.test(el.getAttribute('aria-label') || '');
   };
 
   function post(a) {

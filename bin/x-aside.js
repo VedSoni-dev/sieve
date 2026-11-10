@@ -63,14 +63,16 @@ try {
   if (await page.evaluate(() => !!document.querySelector('a[href*="mode=login"]'))) throw new Error('not signed in to X in this browser');
   const post = page.locator('article').filter({ has: page.locator('a[href$="/status/${id}"]') }).first();
   await post.waitFor({ timeout: 8000 });
-  // Signed-in X has no data-engagement-action hooks: fall back to the post's button group (reply, repost, like, bookmark, share).
-  const ORDER = { reply: 0, retweet: 1, like: 2, bookmark: 3 };
-  const hooked = (await post.locator('[data-engagement-action]').count()) > 0;
-  const btn = (action) => hooked
-    ? post.locator('[data-engagement-action="' + action + '"]').locator('button, a').first()
-    : post.locator('[role="group"]').last().locator('button, a').nth(ORDER[action]);
+  // X serves different markups (data-testid, data-engagement-action, or bare aria-labels). Match by meaning, never by position.
+  const SEL = {
+    like: '[data-testid="like"], [data-testid="unlike"], [data-engagement-action="like"] button, button[aria-label$=". Like"], button[aria-label$=". Liked"]',
+    retweet: '[data-testid="retweet"], [data-testid="unretweet"], [data-engagement-action="retweet"] button, button[aria-label$=". Repost"], button[aria-label$=". Reposted"]',
+    bookmark: '[data-testid="bookmark"], [data-testid="removeBookmark"], [data-engagement-action="bookmark"] button, button[aria-label$=". Bookmark"], button[aria-label$=". Bookmarked"]',
+    reply: '[data-testid="reply"], [data-engagement-action="reply"] a, [data-engagement-action="reply"] button, [aria-label$=". Reply"]',
+  };
+  const btn = (action) => post.locator(SEL[action]).first();
   const ON = /(^|\. )(Liked|Unlike|Reposted|Undo repost|Bookmarked|Remove Bookmark)/i;
-  const isOn = async (action) => { const b = btn(action); const p = await b.getAttribute('aria-pressed'); const l = (await b.getAttribute('aria-label')) || ''; return p === 'true' || ON.test(l); };
+  const isOn = async (action) => { const b = btn(action); const p = await b.getAttribute('aria-pressed'); const l = (await b.getAttribute('aria-label')) || ''; const t = (await b.getAttribute('data-testid')) || ''; return p === 'true' || ON.test(l) || /^(unlike|unretweet|removeBookmark)$/.test(t); };
   const labelOf = async (action) => (await btn(action).getAttribute('aria-label')) || '';
   const toggle = async (action, want) => { if ((await isOn(action)) !== want) { await btn(action).click(); await sleep(1200); } out.ok = (await isOn(action)) === want; out.state = want; };
   const T = ${JSON.stringify(type)}, TEXT = ${JSON.stringify(text)};
