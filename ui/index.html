@@ -3,51 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sieve</title>
+<title>sieve</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath fill='%23111' d='M0 0h1v1H0zM2 0h1v1H2zM4 0h1v1H4zM6 0h1v1H6zM1 1h1v1H1zM5 1h1v1H5zM0 2h1v1H0zM2 2h1v1H2zM4 2h1v1H4zM6 2h1v1H6zM3 3h1v1H3zM7 3h1v1H7zM0 4h1v1H0zM2 4h1v1H2zM4 4h1v1H4zM6 4h1v1H6zM1 5h1v1H1zM5 5h1v1H5zM2 6h1v1H2zM6 6h1v1H6zM3 7h1v1H3z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <!--
   THIS IS THE TEMPLATE. Make it yours: tell your agent "change my Sieve UI so …"
-  (it edits ui/), or edit index.html / style.css / app.js yourself. Refresh to see it.
+  (it edits ui/), or edit index.html / style.css / app.js / dither.js yourself. Refresh to see it.
 -->
 </head>
 <body>
 <header class="bar">
-  <div class="brand">Sieve <span>your X, your rules</span></div>
-  <div class="spacer"></div>
-  <button class="agent" id="agentPill" title="Your agent's status"><i></i><span>Agent offline</span></button>
-  <button class="ghost" id="hiddenBtn">0 hidden</button>
-  <button class="ghost" id="rulesBtn">Rules</button>
+  <div class="bar-in">
+    <a class="mark" href="/" aria-label="sieve"><span class="mark-dots" aria-hidden="true"></span>sieve</a>
+    <div class="stat" id="stat"><b id="keptN">0</b> kept <span class="sep">/</span> <button id="hiddenBtn"><b id="hiddenN">0</b> sifted out</button></div>
+    <div class="spacer"></div>
+    <button class="chip" id="ditherBtn" aria-pressed="true" title="Dither images">Dither</button>
+    <button class="chip" id="rulesBtn">Rules</button>
+    <button class="agent" id="agentPill" title=""><i aria-hidden="true"></i><span>Agent offline</span></button>
+  </div>
 </header>
 
-<div class="template-note" id="templateNote">
-  <b>This is the template.</b> Ask your agent to change anything: <code>"change my Sieve UI to a three-column magazine"</code>, <code>"show images big and text small"</code>, <code>"add a reading-time badge"</code>. It edits the <code>ui/</code> folder.
-  <button class="x" id="noteX" title="Hide">✕</button>
-</div>
-
 <main class="feed">
+  <p class="note" id="templateNote">
+    <span class="mono">template</span> Your agent can redesign this page: “make it a three-column magazine”, “bigger photos”, “add reading time”. It lives in <code>ui/</code>.
+    <button class="note-x" id="noteX" aria-label="Hide">×</button>
+  </p>
   <button class="newpill" id="newPill" hidden>New posts</button>
   <div id="empty" class="empty" hidden></div>
   <div id="posts"></div>
-  <button class="more" id="more">Ask the agent for more</button>
+  <footer class="foot">
+    <button class="more" id="more">Ask the agent for more</button>
+    <p class="mono dim" id="footStat"></p>
+  </footer>
 </main>
 
-<!-- rules drawer -->
-<aside class="drawer" id="rules" hidden>
-  <div class="drawer-head"><b>Your rules</b><button class="x" data-close>✕</button></div>
-  <p class="dim">Plain words. Your agent re-reads this before every scroll. Hidden posts show up under “hidden” with the reason.</p>
+<div class="scrim" id="scrim" hidden></div>
+
+<aside class="drawer" id="rules" aria-hidden="true">
+  <div class="drawer-head"><h2>Your rules</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <p class="dim">Plain words. Your agent re-reads these before every scroll and uses judgement, not keywords.</p>
   <textarea id="rulesText" spellcheck="false"></textarea>
-  <button class="primary" id="rulesSave">Save rules</button>
+  <div class="drawer-foot"><span class="mono dim" id="rulesHint">⌘↵ to save</span><button class="primary" id="rulesSave">Save rules</button></div>
 </aside>
 
-<!-- hidden drawer -->
-<aside class="drawer" id="hidden" hidden>
-  <div class="drawer-head"><b>What your agent hid</b><button class="x" data-close>✕</button></div>
+<aside class="drawer" id="hidden" aria-hidden="true">
+  <div class="drawer-head"><h2>Sifted out</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <div id="reasons"></div>
   <div id="hiddenList"></div>
 </aside>
 
-<div class="toast" id="toast" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script src="dither.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

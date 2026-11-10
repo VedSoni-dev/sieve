@@ -171,6 +171,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // Image proxy so the UI can dither X's images on a canvas (X's CDN doesn't allow cross-origin pixel reads).
+  // Only X's image hosts, only GET, cached by the browser for a day.
+  if (url.pathname === '/img') {
+    let src;
+    try { src = new URL(url.searchParams.get('u') || ''); } catch { res.writeHead(400); return res.end(); }
+    if (src.protocol !== 'https:' || !/^(pbs|abs)\.twimg\.com$/.test(src.hostname)) { res.writeHead(403); return res.end(); }
+    fetch(src, { headers: { 'user-agent': 'sieve-image-proxy' } }).then(async (r) => {
+      if (!r.ok) { res.writeHead(r.status); return res.end(); }
+      res.writeHead(200, { 'content-type': r.headers.get('content-type') || 'image/jpeg', 'cache-control': 'public, max-age=86400' });
+      res.end(Buffer.from(await r.arrayBuffer()));
+    }).catch(() => { res.writeHead(502); res.end(); });
+    return;
+  }
+
   if (url.pathname.startsWith('/api/')) {
     const m = url.pathname.match(/^\/api\/actions\/([\w-]+)$/);
     const key = m ? `${req.method} /api/actions/:id` : `${req.method} ${url.pathname}`;

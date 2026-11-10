@@ -40,6 +40,8 @@ The agent re-reads them every round and uses judgement, not keyword matching. Ev
 
 ## Make the UI yours
 
+The template ships as paper and ink. Every photo and avatar is an ordered (Bayer 8×8) dither in two inks (`ui/dither.js`); hover a photo to develop the real one, or turn **Dither** off. Keys: `j`/`k` move, `l` like, `b` bookmark, `r` reply, `o` open on X.
+
 `ui/` is a template. Ask your agent "change my Sieve UI to a three-column magazine", "only show images", "add a reading-time badge", or edit `ui/index.html`, `ui/style.css` and `ui/app.js` yourself. Posts come from `GET /api/feed` and update live on `/api/events`.
 
 ## Browser use
@@ -69,13 +71,14 @@ Claude Code reads `.claude/skills/sieve/SKILL.md`; Codex, Gemini CLI and Cursor 
 | `GET /api/actions/wait?timeout=55` | blocks until there's something to do |
 | `POST /api/actions/:id` | `{status: working / done / failed, error?}` |
 | `GET/PUT /api/rules`, `POST /api/agent`, `GET /api/events` | rules, heartbeat, live stream |
+| `GET /img?u=` | same-origin proxy for `pbs.twimg.com` images (so the canvas can dither them); nothing else |
 
 The server only listens on 127.0.0.1 and refuses requests from other websites.
 
 ## Honest notes
 
 - Automating your own account may break X's terms. Sieve acts only on your clicks, at human pace, on your machine.
-- X changes its markup. `x/read.js` reads semantic structure (the 2026 web app has no `data-testid`), and your agent can fix it when it breaks.
+- X changes its markup, and serves different versions to different sessions. `x/read.js` and the action steps match by meaning (test-ids, labels, structure), not position, and your agent can fix them when they break.
 - Not affiliated with X.
 
 MIT

@@ -79,3 +79,9 @@ test('requests from other websites are refused', async () => {
   const r = await fetch(base + '/api/actions', { method: 'POST', headers: { origin: 'https://evil.example', 'content-type': 'application/json' }, body: '{"type":"like","postId":"1"}' });
   assert.equal(r.status, 403);
 });
+
+test('image proxy only serves X image hosts', async () => {
+  assert.equal((await fetch(base + '/img?u=' + encodeURIComponent('https://evil.example/a.jpg'))).status, 403);
+  assert.equal((await fetch(base + '/img?u=' + encodeURIComponent('http://pbs.twimg.com/a.jpg'))).status, 403);
+  assert.equal((await fetch(base + '/img?u=not-a-url')).status, 400);
+});

@@ -45,7 +45,8 @@ Each round takes a fresh look at the top of the timeline. When the user presses 
 - Ads and promoted posts (`promoted: true`): hide with reason `ad` unless the rules say otherwise.
 - For a kept post, push the object exactly as the reader returned it, plus `"tags": ["1-3 short topics"]`.
 - Hidden: `{"id", "handle", "text": first 200 chars, "reason": "2-5 words, e.g. 'AI', 'engagement bait'"}`.
-- Unsure: keep it with the tag `unsure`.
+- If the text alone is ambiguous ("Is this management?", "matter of time", image-only posts), **look at the images** before deciding: open them (the post's `images[]` URLs) or take a screenshot of the post. The picture is often the actual content.
+- Still unsure: keep it with the tag `unsure`.
 
 ### Doing actions
 For each pending action `{id, type, url, text?}`:
