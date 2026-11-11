@@ -79,9 +79,9 @@ const words = (segs) => Array.isArray(segs) ? segs.map((x) => x.v || '').join(''
 // One line per post: what the agent needs to judge it, nothing more.
 function line(key, p) {
   const flags = [p.promoted && 'AD', p.aiGenerated && 'labeled AI-generated', p.nsfw && 'NSFW', p.spoiler && 'SPOILER', p.video && (p.duration ? `video ${p.duration}` : 'video'), (p.images || []).length && `${p.images.length} img`].filter(Boolean);
-  const where = p.community || p.channel || p.name || p.handle || '';
-  const body = [p.title, p.flair && `[${p.flair}]`, words(p.text), p.quote && `[quoting ${p.quote.handle || ''}: ${words(p.quote.text)}]`, p.card?.title && !(p.title && p.card.title === p.title) && `[link: ${p.card.title}]`].filter(Boolean).join(' · ');
-  return `${key}  ${flags.length ? `[${flags.join(', ')}] ` : ''}${one(where, 40)} — ${one(body, 260)}`;
+  const where = p.community || p.channel || [p.name, p.handle && p.handle !== p.name && '@' + p.handle].filter(Boolean).join(' ') || '';
+  const body = [p.title, p.flair && `[${p.flair}]`, words(p.text), p.alt && `[image: ${p.alt}]`, p.context && `(${p.context})`, p.quote && `[quoting ${p.quote.handle || ''}: ${words(p.quote.text)}]`, p.card?.title && !(p.title && p.card.title === p.title) && `[link: ${p.card.title}]`].filter(Boolean).join(' · ');
+  return `${key}  ${flags.length ? `[${flags.join(', ')}] ` : ''}${one(where, 48)} — ${one(body, 260)}`;
 }
 
 const [cmd, id, ...args] = process.argv.slice(2);

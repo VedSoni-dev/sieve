@@ -1,0 +1,14 @@
+{
+  "id": "pinterest",
+  "name": "Pinterest",
+  "home": "https://www.pinterest.com/",
+  "urlPattern": "^https://([a-z]{2,3}\\.|www\\.)?pinterest\\.[a-z.]+/",
+  "postUrl": "https://www.pinterest.com/pin/{id}/",
+  "nativeIdFrom": "/pin/(\\d+)",
+  "signedOutReads": "nothing useful (Pinterest's home needs an account)",
+  "settleMs": 4000,
+  "scrollWaitMs": 1800,
+  "actions": { "like": "Love", "reply": "Comment", "bookmark": "Save to board" },
+  "likeIcon": "heart",
+  "imageHosts": ["i.pinimg.com"]
+}

@@ -158,6 +158,7 @@ body.nodither figure.dither canvas { visibility: hidden; }
 .src-hn { color: #ff6600; border-color: color-mix(in srgb, #ff6600 40%, transparent); }
 .src-mastodon { color: #6364ff; border-color: color-mix(in srgb, #6364ff 40%, transparent); }
 .src-threads { color: var(--ink); }
+.src-pinterest { color: #e60023; border-color: color-mix(in srgb, #e60023 40%, transparent); }
 .src-lemmy { color: #14854f; border-color: color-mix(in srgb, #14854f 40%, transparent); }
 .src-tiktok { color: #fe2c55; border-color: color-mix(in srgb, #fe2c55 40%, transparent); }
 .src-lobsters { color: #ac130d; border-color: color-mix(in srgb, #ac130d 40%, transparent); }
