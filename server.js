@@ -108,8 +108,9 @@ const routes = {
     return { ok: true };
   },
   'GET /api/feed': (q) => {
-    const limit = Math.min(500, Number(q.limit) || 200);
-    return { posts: db.posts.slice(0, limit), total: db.posts.length };
+    const limit = Math.min(1000, Number(q.limit) || 200);
+    const list = q.source ? db.posts.filter(p => sourceOf(p) === q.source) : db.posts;
+    return { posts: list.slice(0, limit), total: list.length };
   },
   'POST /api/feed': (b) => {
     if (b.source && loadSources()[b.source]) {
@@ -127,6 +128,8 @@ const routes = {
     emit('refresh', (b.posts || []).map(p => p.id));
     return { added: fresh.length, hidden: hid.length, total: db.posts.length };
   },
+  // Every id the agent has judged (kept or hidden): skip these when reading.
+  'GET /api/seen': () => ({ ids: [...db.posts.map(p => p.id), ...db.hidden.map(h => h.id)], kept: db.posts.map(p => p.id) }),
   'GET /api/hidden': () => ({ hidden: db.hidden.slice(0, 300).map(({ post, ...h }) => h) }),
   // Everything the agent has judged so far, for re-judging after the rules change.
   'GET /api/all': () => ({

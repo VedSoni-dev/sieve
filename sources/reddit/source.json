@@ -13,5 +13,14 @@
     "bookmark": "Save"
   },
   "likeIcon": "arrow",
-  "imageHosts": ["i.redd.it", "preview.redd.it", "external-preview.redd.it", "a.thumbs.redditmedia.com", "b.thumbs.redditmedia.com", "styles.redditmedia.com", "www.redditstatic.com"]
+  "imageHosts": [
+    "i.redd.it",
+    "preview.redd.it",
+    "external-preview.redd.it",
+    "a.thumbs.redditmedia.com",
+    "b.thumbs.redditmedia.com",
+    "styles.redditmedia.com",
+    "www.redditstatic.com"
+  ],
+  "handlePrefix": "u/"
 }

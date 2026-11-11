@@ -118,3 +118,16 @@ test('multi-source: reddit posts, per-source actions, source status, image hosts
   assert.ok((await call('GET', '/api/sources')).body.sources.find(s => s.id === 'reddit').enabled);
   assert.equal((await fetch(base + '/img?u=' + encodeURIComponent('https://i.redd.it/x.jpg'))).status !== 403, true);
 });
+
+test('seen lists every judged id; a refresh updates counts but keeps tags; feed filters by source', async () => {
+  const hp = { id: 'hn:42', source: 'hn', url: 'https://news.ycombinator.com/item?id=42', handle: '', name: 'example.com', title: 'Story', time: 60000, text: [], likes: 3 };
+  await call('POST', '/api/feed', { source: 'hn', signedIn: false, posts: [{ ...hp, tags: ['web'] }], hidden: [{ ...hp, id: 'hn:43', reason: 'about AI' }] });
+  const seen = (await call('GET', '/api/seen')).body;
+  assert.ok(seen.ids.includes('hn:42') && seen.ids.includes('hn:43'));
+  assert.ok(seen.kept.includes('hn:42') && !seen.kept.includes('hn:43'));
+  await call('POST', '/api/feed', { source: 'hn', signedIn: false, posts: [{ ...hp, handle: 'pg', likes: 90 }] }); // a round's refresh: no tags
+  const only = (await call('GET', '/api/feed?source=hn')).body;
+  assert.equal(only.total, 1);
+  assert.deepEqual([only.posts[0].handle, only.posts[0].likes, only.posts[0].tags[0]], ['pg', 90, 'web']);
+  assert.equal((await call('GET', '/api/sources')).body.sources.find(s => s.id === 'hn').status.signedIn, false);
+});

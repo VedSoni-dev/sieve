@@ -1,0 +1,23 @@
+{
+  "id": "hn",
+  "name": "Hacker News",
+  "home": "https://news.ycombinator.com/",
+  "also": {
+    "newest": "https://news.ycombinator.com/newest",
+    "best": "https://news.ycombinator.com/best"
+  },
+  "urlPattern": "^https://news\\.ycombinator\\.com/",
+  "postUrl": "https://news.ycombinator.com/item?id={id}",
+  "nativeIdFrom": "[?&]id=(\\d+)",
+  "signedOutReads": "everything (HN is public)",
+  "readMode": "pages",
+  "settleMs": 1500,
+  "actions": {
+    "like": "Upvote",
+    "reply": "Comment",
+    "bookmark": "Favorite"
+  },
+  "likeIcon": "arrow",
+  "imageHosts": [],
+  "handlePrefix": "by "
+}

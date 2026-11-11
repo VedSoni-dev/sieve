@@ -26,40 +26,42 @@ Each source is a folder in `sources/<id>/`:
 Use whatever browser-use tool you have, in this order:
 
 1. **Aside** (`aside` CLI). Use the generic driver:
-   - `node bin/aside.js read <source> 3` opens the source's home, reads three pages (scrolling, or the next page of its own JSON) and prints `{source, signedIn, posts[]}`. Add `--url <url>` to read one profile, subreddit or channel.
+   - `node bin/aside.js round 2` reads **every source the user turned on** in one go (two pages each), keeps the posts you haven't judged yet in `data/round.json`, and prints one short line per new post with a key like `reddit.4`. Then you judge (below) and push the whole round with `node bin/sieve.js judge`. This is the normal way to run a round.
+   - `node bin/aside.js read <source> 3` reads one source and prints `{source, signedIn, posts[]}`. Add `--url <url>` to read one profile, subreddit or channel.
    - `node bin/aside.js act <source> <type> <postUrl> ["text"]` does one action, then checks the site's state and prints `{ok, error?}`.
    - `node bin/aside.js probe <source> <postUrl>` finds the action buttons and reads their state. **It never clicks.** Use it when a site's markup may have changed.
 2. **Claude in Chrome, or any browser tool that can run JS.** Open the source's `home`, evaluate `(<sources/<id>/read.js>)({})` in the page, and scroll (or pass `{cursor}` for JSON sources). For actions, follow `act.js` step by step by hand.
 3. **Screenshot-only tools.** Read posts off the screen and follow `act.js` by sight. It's slower, but it works.
 
-If a source reports `signedIn: false` where it needs an account, skip it this round. Push nothing for it, and tell the user to sign in to that site in their browser themselves. Never type their password. Other sources keep running.
+Some sites can be read signed out (Hacker News, Bluesky's Discover feed); their posts still come in and the UI locks the actions. A site that shows nothing signed out comes back empty. Either way, tell the user once to sign in to that site in their own browser. Never type their password. Other sources keep running.
 
 ## The loop (keep it running until the user says stop)
 
 ```
 node bin/sieve.js rules                        # re-read every round; they may have edited them
-node bin/sieve.js sources                      # which sources are on
-node bin/sieve.js seen                         # ids you already handled; skip these
-for each enabled source:
-  node bin/sieve.js agent scrolling "reading <Source>"
-  node bin/aside.js read <source> 3            # or your browser's equivalent
-  → judge each NEW post against the rules (below)
-  node bin/sieve.js push /tmp/sieve-<source>.json   # {"source":"<id>","signedIn":true,"posts":[kept…],"hidden":[{…post,"reason"}]}
+node bin/aside.js round 2                      # reads every enabled source, lists the NEW posts with keys
+→ judge every line against the rules (below), write your verdicts to a file:
+    reddit.4 hide about AI
+    hn.2 keep space, photos
+node bin/sieve.js judge /tmp/verdicts.txt      # pushes the round: kept posts with your tags, hidden ones with reasons
 node bin/sieve.js agent idle "watching for your clicks"
 node bin/sieve.js wait 55                      # returns the moment they click something
 → do each action (below), then loop. If wait timed out with nothing, loop anyway.
 ```
 
-When the user presses **"Ask the agent for more"**, you get a `more` action: read deeper next round (`read <source> 8`) and mark it done.
+Unlisted posts are kept without tags, and `[AD]` posts are hidden as `ad` unless you `keep` them, so only write lines for what you hide or tag. Posts already in the feed come back as refreshes (counts, liked and saved state) with no judging needed. A source that reads `signed out` still shows its posts, but the UI locks its actions until the user signs in to that site in their browser.
+
+Without Aside, do the same by hand: for each enabled source (`node bin/sieve.js sources`), read it, skip ids in `node bin/sieve.js seen`, and `node bin/sieve.js push /tmp/sieve-<source>.json` with `{"source":"<id>","signedIn":true,"posts":[kept…],"hidden":[{…post,"reason"}]}`.
+
+When the user presses **"Ask the agent for more"**, you get a `more` action: read deeper next round (`round 6`) and mark it done.
 
 ### Judging posts
 - Read the whole post: title, text, quoted post, link card title, subreddit or channel. Decide **keep** or **hide** by their rules. Use real judgement, not keyword matching: "no AI" hides a post about LLM benchmarks or "AI upscaling" even if it never says "AI", and keeps a post about a painter named Al.
 - The rules apply across every source. A section titled with a source name (`## Reddit`) applies only to that source.
 - Ads and promoted posts (`promoted: true`): hide with reason `ad`, unless the rules say otherwise.
 - NSFW posts: keep them flagged (`nsfw: true`; the UI blurs them) unless the rules hide them.
-- For a kept post, push the object exactly as the reader returned it, plus `"tags": ["1-3 short topics"]`.
-- For a hidden post, push the **whole post object** plus `"reason": "2-5 words"`. Keeping the whole post lets it come back if the rules change.
-- If the text alone is ambiguous ("Is this management?", image-only posts), **look at the images** before deciding. The picture is often the actual content.
+- Kept: 1-3 short topic tags. Hidden: a 2-5 word reason the user can audit. (`judge` keeps the whole post either way, so a hidden post can come back if the rules change. When pushing by hand, send the whole post object plus `tags` or `reason`.)
+- If the text alone is ambiguous ("Is this management?", image-only posts), **look at the images** before deciding (`data/round.json` has each post's image URLs). The picture is often the actual content.
 - Still unsure: keep it with the tag `unsure`.
 
 ### Doing actions

@@ -40,6 +40,7 @@ let SRC = {};
 const srcOf = (p) => p.source || (/^\d+$/.test(String(p.id)) ? 'x' : String(p.id).split(':')[0]);
 const meta = (p) => SRC[srcOf(p)] || { id: srcOf(p), name: srcOf(p), actions: { like: 'Like', reply: 'Reply', bookmark: 'Bookmark', repost: 'Repost', quote: 'Quote' }, likeIcon: 'heart' };
 const can = (p, a) => !!meta(p).actions?.[a];
+const hp = (p) => meta(p).handlePrefix ?? (p.community ? 'u/' : '@'); // how the site writes a username
 const locked = (p) => meta(p).status && meta(p).status.signedIn === false; // read signed out: actions need a sign-in
 async function loadSources() { SRC = Object.fromEntries((await api('GET', '/api/sources')).sources.map((x) => [x.id, x])); }
 
@@ -56,13 +57,15 @@ function renderText(segs) {
     return `<a class="l" href="${esc(s.url)}" target="_blank" rel="noopener">${esc(String(s.v).replace(/…$/, ''))}</a>${d && d !== 't.co' && !String(s.v).includes(d) ? `<small>${esc(d)}</small>` : ''}`;
   }).join('');
 }
+const same = (a, b) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+const cardIsTitle = (p) => p.card && !p.card.img && same(p.card.title, p.title); // link posts (HN, Reddit): the title is the link
 function renderBody(p) {
   const imgs = (p.images || []).slice(0, 4);
   const long = (p.text || []).reduce((n, x) => n + String(x.v || '').length, 0) > 650;
   return `${p.text?.length ? `<div class="text${long ? ' long' : ''}">${renderText(p.text)}</div>${long ? '<button class="readmore more-toggle" data-more>more</button>' : ''}` : ''}
     ${p.truncated ? `<a class="readmore" href="${esc(p.url)}" target="_blank" rel="noopener">Read the whole post →</a>` : ''}
     ${imgs.length ? `<div class="media n${imgs.length}${p.nsfw || p.spoiler ? ' veiled' : ''}"${p.nsfw || p.spoiler ? ` data-veil="${p.nsfw ? 'NSFW' : 'Spoiler'}"` : ''}>${imgs.map((src, i) => fig(src, { pixel: 2, extra: p.video && i === 0 ? `<a class="play" href="${esc(p.url)}" target="_blank" rel="noopener">▶ Play on ${esc(meta(p).name)}</a>${p.duration ? `<span class="dur${p.live ? ' live' : ''}">${esc(p.live ? 'LIVE' : p.duration)}</span>` : ''}` : '' })).join('')}</div>` : ''}
-    ${p.card ? `<a class="card" href="${esc(p.card.url)}" target="_blank" rel="noopener">${p.card.img ? fig(p.card.img, { pixel: 2, reveal: false }) : '<span></span>'}<span class="c"><span class="d">${esc(p.card.domain || host(p.card.url))}</span><span class="ti">${esc(p.card.title)}</span></span></a>` : ''}`;
+    ${p.card && !cardIsTitle(p) ? `<a class="card${p.card.img ? '' : ' noimg'}" href="${esc(p.card.url)}" target="_blank" rel="noopener">${p.card.img ? fig(p.card.img, { pixel: 2, reveal: false }) : ''}<span class="c"><span class="d">${esc(p.card.domain || host(p.card.url))}</span><span class="ti">${esc(p.card.title)}</span></span></a>` : ''}`;
 }
 function renderPost(p) {
   const pend = p.pending || {};
@@ -73,9 +76,9 @@ function renderPost(p) {
     <div class="av">${fig(p.avatar?.replace('_normal', '_bigger'), { pixel: 1.5, reveal: false })}</div>
     <div class="body">
       ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : p.context ? `<div class="ctx">${esc(p.context)}</div>` : ''}
-      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.headline ? esc(p.headline.length > 60 ? p.headline.slice(0, 58) + '…' : p.headline) : p.handle ? (p.community ? 'u/' : '@') + esc(p.handle) : ''}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>${p.views ? `<span class="h">${k(p.views)} views</span>` : ''}
+      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.headline ? esc(p.headline.length > 60 ? p.headline.slice(0, 58) + '…' : p.headline) : p.handle ? esc(hp(p)) + esc(p.handle) : ''}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>${p.views ? `<span class="h">${k(p.views)} views</span>` : ''}
         ${(p.tags || []).length ? `<span class="tags">${p.tags.slice(0, 2).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}</div>
-      ${p.title ? `<h3 class="ptitle"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>${p.flair ? ` <span class="flair">${esc(p.flair)}</span>` : ''}</h3>` : ''}
+      ${p.title ? (() => { const link = cardIsTitle(p), dom = link ? (p.card.domain || host(p.card.url)) : ''; return `<h3 class="ptitle"><a href="${esc(link ? p.card.url : p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>${dom && dom !== p.name ? ` <small class="dom">${esc(dom)}</small>` : ''}${p.flair ? ` <span class="flair">${esc(p.flair)}</span>` : ''}</h3>`; })() : ''}
       ${renderBody(p)}
       ${p.quote ? `<div class="quote"><div class="who"><b>${esc(p.quote.name)}</b><span class="h">@${esc(p.quote.handle)}</span></div>${renderBody(p.quote)}</div>` : ''}
       <div class="acts">
@@ -121,7 +124,7 @@ function redrawOne(id) {
   const tmp = document.createElement('div'); tmp.innerHTML = renderPost(p);
   el.querySelector('.acts').replaceWith(tmp.querySelector('.acts'));
 }
-async function refresh() { setPosts((await api('GET', '/api/feed?limit=300')).posts); }
+async function refresh() { setPosts((await api('GET', '/api/feed?limit=1000')).posts); }
 
 // ---------- actions ----------
 async function queue(type, p, text) {
@@ -137,7 +140,7 @@ async function queue(type, p, text) {
 function composer(p, kind) {
   const slot = document.querySelector(`.post[data-id="${CSS.escape(p.id)}"] .slot`);
   const max = srcOf(p) === 'x' || srcOf(p) === 'bluesky' ? 280 : 4000, where = meta(p).name, verb = meta(p).actions[kind] || (kind === 'quote' ? 'Quote' : 'Reply');
-  slot.innerHTML = `<form class="composer"><textarea maxlength="${max}" placeholder="${kind === 'quote' ? 'Add your take…' : `${esc(verb)} to ${p.community ? 'u/' : '@'}${esc(p.handle)}…`}"></textarea>
+  slot.innerHTML = `<form class="composer"><textarea maxlength="${max}" placeholder="${kind === 'quote' ? 'Add your take…' : `${esc(verb)} to ${esc(hp(p).trim() === 'by' ? '' : hp(p))}${esc(p.handle)}…`}"></textarea>
     <div class="row"><span class="count">0 / ${max} · your agent posts this on ${esc(where)}</span><span><button type="button" class="btn-ghost" data-cancel>Cancel</button> <button class="primary">${esc(verb)}</button></span></div></form>`;
   const f = slot.querySelector('form'), ta = f.querySelector('textarea');
   ta.focus();
@@ -260,7 +263,7 @@ const ev = new EventSource('/api/events');
 ev.addEventListener('agent', (m) => setAgent(JSON.parse(m.data)));
 ev.addEventListener('posts', async () => {
   const before = new Set(posts.map(p => p.id));
-  const { posts: all } = await api('GET', '/api/feed?limit=300');
+  const { posts: all } = await api('GET', '/api/feed?limit=1000');
   const added = all.filter(p => !before.has(p.id)).length;
   if (scrollY < 200 && !document.querySelector('.composer')) setPosts(all);
   else { unseen += added; $('#newPill').textContent = `${unseen} new post${unseen === 1 ? '' : 's'}`; $('#newPill').hidden = false; window._next = all; }
@@ -268,7 +271,7 @@ ev.addEventListener('posts', async () => {
 });
 ev.addEventListener('refresh', async (m) => {
   const ids = new Set(JSON.parse(m.data));
-  const { posts: all } = await api('GET', '/api/feed?limit=300');
+  const { posts: all } = await api('GET', '/api/feed?limit=1000');
   for (const p of all) if (ids.has(p.id) && byId.has(p.id)) { Object.assign(byId.get(p.id), p); redrawOne(p.id); }
 });
 ev.addEventListener('hidden', () => counts());
