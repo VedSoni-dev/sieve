@@ -17,10 +17,19 @@ const MAX_POSTS = 2000;
 const ACTIONS = new Set(['like', 'unlike', 'repost', 'unrepost', 'quote', 'reply', 'bookmark', 'unbookmark', 'more']);
 
 // Sources: one folder each in sources/ (source.json says what it is and what it can do).
+// Re-read on demand, so a new source folder works without restarting the server.
 const SRC_DIR = path.join(__dirname, 'sources');
-const SOURCES = Object.fromEntries(fs.readdirSync(SRC_DIR).filter((d) => fs.existsSync(path.join(SRC_DIR, d, 'source.json')))
-  .map((d) => { const j = JSON.parse(fs.readFileSync(path.join(SRC_DIR, d, 'source.json'), 'utf8')); return [j.id, j]; }));
-const IMAGE_HOSTS = new Set(['pbs.twimg.com', 'abs.twimg.com', ...Object.values(SOURCES).flatMap((s) => s.imageHosts || [])]);
+const SOURCES = {};
+const IMAGE_HOSTS = new Set(['pbs.twimg.com', 'abs.twimg.com']);
+function loadSources() {
+  for (const d of fs.readdirSync(SRC_DIR)) {
+    const f = path.join(SRC_DIR, d, 'source.json');
+    if (!fs.existsSync(f)) continue;
+    try { const j = JSON.parse(fs.readFileSync(f, 'utf8')); SOURCES[j.id] = j; for (const h of j.imageHosts || []) IMAGE_HOSTS.add(h); } catch {}
+  }
+  return SOURCES;
+}
+loadSources();
 const sourceOf = (p) => p?.source || (/^\d+$/.test(String(p?.id)) ? 'x' : String(p?.id || '').split(':')[0]);
 const supports = (src, type) => type === 'more' || !SOURCES[src] || Object.keys(SOURCES[src].actions || {}).includes(type.replace(/^un/, ''));
 
@@ -88,11 +97,11 @@ const routes = {
     counts: { posts: db.posts.length, hidden: db.hidden.length, pending: db.actions.filter(a => a.status === 'pending').length },
     bySource: Object.fromEntries(Object.keys(SOURCES).map((id) => [id, { kept: db.posts.filter((p) => sourceOf(p) === id).length, hidden: db.hidden.filter((h) => sourceOf(h.post || h) === id).length }])),
   }),
-  'GET /api/sources': () => ({
+  'GET /api/sources': () => (loadSources(), {
     sources: Object.values(SOURCES).map((s) => ({ ...s, enabled: !!db.sources.enabled[s.id], status: db.sources.status[s.id] || null })),
   }),
   'PUT /api/sources': (b) => {
-    if (!SOURCES[b.id]) throw Object.assign(new Error(`unknown source ${b.id}`), { code: 400 });
+    if (!loadSources()[b.id]) throw Object.assign(new Error(`unknown source ${b.id}`), { code: 400 });
     db.sources.enabled[b.id] = !!b.enabled;
     save('sources.json', db.sources);
     emit('sources', {});
@@ -103,7 +112,7 @@ const routes = {
     return { posts: db.posts.slice(0, limit), total: db.posts.length };
   },
   'POST /api/feed': (b) => {
-    if (b.source && SOURCES[b.source]) {
+    if (b.source && loadSources()[b.source]) {
       db.sources.status[b.source] = { signedIn: b.signedIn !== false, at: Date.now(), read: (b.posts || []).length + (b.hidden || []).length };
       save('sources.json', db.sources); emit('sources', {});
     }

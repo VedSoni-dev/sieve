@@ -93,6 +93,8 @@ body.nodither figure.dither canvas { visibility: hidden; }
 .media.n1 figure { aspect-ratio: 4 / 3; width: 100%; margin: 0 auto; }
 .media.n2, .media.n3, .media.n4 { grid-template-columns: 1fr 1fr; }
 .media.n3 figure:first-child { grid-row: span 2; aspect-ratio: auto; }
+.media .dur { position: absolute; right: 10px; bottom: 10px; z-index: 2; font: .7rem var(--mono); color: #fff; background: rgba(0,0,0,.78); padding: 3px 6px; border-radius: 4px; }
+.media .dur.live { background: #e5302b; }
 .media .play { position: absolute; left: 10px; bottom: 10px; z-index: 2; font: .66rem var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--paper); background: var(--ink); padding: 5px 8px; border-radius: 3px; }
 .card { display: grid; grid-template-columns: 96px 1fr; margin-top: 12px; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; transition: border-color .2s; }
 .card:hover { border-color: var(--ink-2); }

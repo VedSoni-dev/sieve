@@ -1,0 +1,20 @@
+{
+  "id": "youtube",
+  "name": "YouTube",
+  "home": "https://www.youtube.com/",
+  "also": { "subscriptions": "https://www.youtube.com/feed/subscriptions" },
+  "urlPattern": "^https://(www\\.)?youtube\\.com/",
+  "postUrl": "https://www.youtube.com/watch?v={id}",
+  "nativeIdFrom": "[?&]v=([\\w-]{11})",
+  "signedOutReads": "a generic home page",
+  "readMode": "scroll",
+  "settleMs": 4000,
+  "scrollWaitMs": 2000,
+  "actions": {
+    "like": "Like",
+    "reply": "Comment",
+    "bookmark": "Watch later"
+  },
+  "likeIcon": "thumb",
+  "imageHosts": ["i.ytimg.com", "i1.ytimg.com", "i9.ytimg.com", "yt3.ggpht.com", "yt3.googleusercontent.com"]
+}

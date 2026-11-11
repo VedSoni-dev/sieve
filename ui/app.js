@@ -60,7 +60,7 @@ function renderBody(p) {
   const long = (p.text || []).reduce((n, x) => n + String(x.v || '').length, 0) > 650;
   return `${p.text?.length ? `<div class="text${long ? ' long' : ''}">${renderText(p.text)}</div>${long ? '<button class="readmore more-toggle" data-more>more</button>' : ''}` : ''}
     ${p.truncated ? `<a class="readmore" href="${esc(p.url)}" target="_blank" rel="noopener">Read the whole post →</a>` : ''}
-    ${imgs.length ? `<div class="media n${imgs.length}${p.nsfw || p.spoiler ? ' veiled' : ''}"${p.nsfw || p.spoiler ? ` data-veil="${p.nsfw ? 'NSFW' : 'Spoiler'}"` : ''}>${imgs.map((src, i) => fig(src, { pixel: 2, extra: p.video && i === 0 ? `<a class="play" href="${esc(p.url)}" target="_blank" rel="noopener">▶ Play on ${esc(meta(p).name)}</a>` : '' })).join('')}</div>` : ''}
+    ${imgs.length ? `<div class="media n${imgs.length}${p.nsfw || p.spoiler ? ' veiled' : ''}"${p.nsfw || p.spoiler ? ` data-veil="${p.nsfw ? 'NSFW' : 'Spoiler'}"` : ''}>${imgs.map((src, i) => fig(src, { pixel: 2, extra: p.video && i === 0 ? `<a class="play" href="${esc(p.url)}" target="_blank" rel="noopener">▶ Play on ${esc(meta(p).name)}</a>${p.duration ? `<span class="dur${p.live ? ' live' : ''}">${esc(p.live ? 'LIVE' : p.duration)}</span>` : ''}` : '' })).join('')}</div>` : ''}
     ${p.card ? `<a class="card" href="${esc(p.card.url)}" target="_blank" rel="noopener">${p.card.img ? fig(p.card.img, { pixel: 2, reveal: false }) : '<span></span>'}<span class="c"><span class="d">${esc(p.card.domain || host(p.card.url))}</span><span class="ti">${esc(p.card.title)}</span></span></a>` : ''}`;
 }
 function renderPost(p) {
@@ -72,7 +72,7 @@ function renderPost(p) {
     <div class="av">${fig(p.avatar?.replace('_normal', '_bigger'), { pixel: 1.5, reveal: false })}</div>
     <div class="body">
       ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : ''}
-      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.community ? 'u/' : '@'}${esc(p.handle)}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>
+      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.community ? 'u/' : '@'}${esc(p.handle)}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>${p.views ? `<span class="h">${k(p.views)} views</span>` : ''}
         ${(p.tags || []).length ? `<span class="tags">${p.tags.slice(0, 2).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}</div>
       ${p.title ? `<h3 class="ptitle"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>${p.flair ? ` <span class="flair">${esc(p.flair)}</span>` : ''}</h3>` : ''}
       ${renderBody(p)}
