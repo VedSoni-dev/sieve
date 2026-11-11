@@ -1,0 +1,20 @@
+{
+  "id": "linkedin",
+  "name": "LinkedIn",
+  "home": "https://www.linkedin.com/feed/",
+  "urlPattern": "^https://(www\\.)?linkedin\\.com/",
+  "postUrl": "https://www.linkedin.com/feed/update/urn:li:activity:{id}/",
+  "nativeIdFrom": "activity[:-](\\d+)",
+  "signedOutReads": "nothing (LinkedIn needs an account)",
+  "readMode": "json",
+  "settleMs": 5000,
+  "actions": {
+    "like": "Like",
+    "reply": "Comment",
+    "repost": "Repost",
+    "bookmark": "Save"
+  },
+  "likeIcon": "thumb",
+  "careful": "LinkedIn restricts accounts that automate. Sieve only acts on your clicks, slowly, and stops at the first warning.",
+  "imageHosts": ["media.licdn.com", "static.licdn.com"]
+}

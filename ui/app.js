@@ -72,8 +72,8 @@ function renderPost(p) {
   return `<article class="post${locked(p) ? ' locked' : ''}" data-id="${esc(p.id)}">
     <div class="av">${fig(p.avatar?.replace('_normal', '_bigger'), { pixel: 1.5, reveal: false })}</div>
     <div class="body">
-      ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : ''}
-      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.community ? 'u/' : '@'}${esc(p.handle)}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>${p.views ? `<span class="h">${k(p.views)} views</span>` : ''}
+      ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : p.context ? `<div class="ctx">${esc(p.context)}</div>` : ''}
+      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.headline ? esc(p.headline.length > 60 ? p.headline.slice(0, 58) + '…' : p.headline) : p.handle ? (p.community ? 'u/' : '@') + esc(p.handle) : ''}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>${p.views ? `<span class="h">${k(p.views)} views</span>` : ''}
         ${(p.tags || []).length ? `<span class="tags">${p.tags.slice(0, 2).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}</div>
       ${p.title ? `<h3 class="ptitle"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>${p.flair ? ` <span class="flair">${esc(p.flair)}</span>` : ''}</h3>` : ''}
       ${renderBody(p)}
