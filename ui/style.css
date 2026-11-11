@@ -115,6 +115,8 @@ body.nodither figure.dither canvas { visibility: hidden; }
 .act.save.on svg { fill: currentColor; }
 .act.repost.on { color: var(--ok); }
 .act.open { margin-left: auto; }
+.post.locked .act[data-act] { opacity: .45; }
+.post.locked .act[data-act]:hover { background: none; }
 .act .wait { display: none; font: .6rem var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--signal); }
 .act.pending .wait { display: inline; }
 .act.pending .n { display: none; }

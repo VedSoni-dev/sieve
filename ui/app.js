@@ -40,6 +40,7 @@ let SRC = {};
 const srcOf = (p) => p.source || (/^\d+$/.test(String(p.id)) ? 'x' : String(p.id).split(':')[0]);
 const meta = (p) => SRC[srcOf(p)] || { id: srcOf(p), name: srcOf(p), actions: { like: 'Like', reply: 'Reply', bookmark: 'Bookmark', repost: 'Repost', quote: 'Quote' }, likeIcon: 'heart' };
 const can = (p, a) => !!meta(p).actions?.[a];
+const locked = (p) => meta(p).status && meta(p).status.signedIn === false; // read signed out: actions need a sign-in
 async function loadSources() { SRC = Object.fromEntries((await api('GET', '/api/sources')).sources.map((x) => [x.id, x])); }
 
 // ---------- rendering (change freely) ----------
@@ -68,7 +69,7 @@ function renderPost(p) {
   const state = (key, now) => (pend[key] ? pend[key] === key || pend[key] === 'quote' : now);
   const liked = state('like', p.liked), reposted = state('repost', p.reposted), saved = state('bookmark', p.bookmarked);
   const cls = (key, on) => `${on ? ' on' : ''}${pend[key] ? ' pending' : ''}`;
-  return `<article class="post" data-id="${esc(p.id)}">
+  return `<article class="post${locked(p) ? ' locked' : ''}" data-id="${esc(p.id)}">
     <div class="av">${fig(p.avatar?.replace('_normal', '_bigger'), { pixel: 1.5, reveal: false })}</div>
     <div class="body">
       ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : ''}
@@ -167,6 +168,8 @@ document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-act]');
   if (!b) return;
   e.stopPropagation();
+  const lp = byId.get(b.closest('.post').dataset.id);
+  if (lp && locked(lp)) { toast(`Sign in to ${meta(lp).name} in your agent's browser, and your clicks will go through there.`); return; }
   doAct(b.dataset.act, byId.get(b.closest('.post').dataset.id), b);
 });
 $('#more').onclick = async () => { await api('POST', '/api/actions', { type: 'more' }); toast('Asked your agent to scroll deeper.'); };

@@ -1,0 +1,19 @@
+{
+  "id": "bluesky",
+  "name": "Bluesky",
+  "home": "https://bsky.app/",
+  "urlPattern": "^https://bsky\\.app/",
+  "nativeIdFrom": "/post/([a-z0-9]+)",
+  "signedOutReads": "the public Discover feed and any profile",
+  "readMode": "json",
+  "settleMs": 3500,
+  "actions": {
+    "like": "Like",
+    "repost": "Repost",
+    "quote": "Quote",
+    "reply": "Reply",
+    "bookmark": "Save"
+  },
+  "likeIcon": "heart",
+  "imageHosts": ["cdn.bsky.app", "video.bsky.app"]
+}

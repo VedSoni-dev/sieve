@@ -22,6 +22,7 @@ It works the other way too. When you like, upvote, repost, comment or save in yo
 | **X** | your home timeline, any profile | like, repost, quote, reply, bookmark | live: reads verified; likes done on real X from Sieve clicks |
 | **Reddit** | your home feed (Best), any subreddit, via Reddit's own JSON in your session | upvote, comment, save | live: reads verified (72 posts); buttons found and state read signed in |
 | **YouTube** | your home page or subscriptions (`--url …/feed/subscriptions`); ads flagged, Shorts and auto-Mixes skipped | like, comment, watch later | live: reads verified (72 videos); like, Watch later and comment box found signed in; the video is paused and muted before any action |
+| **Bluesky** | your Following timeline (Bluesky's own API, with the page's session), or the public Discover feed when signed out | like, repost, quote, reply, save | reads verified signed out (119 posts from Discover); all buttons found on a real post; acting needs you signed in, and Sieve locks the buttons until then |
 
 Turn sources on and off in the **Sources** panel. Each one is a folder in `sources/<id>/`: `source.json` (what it is and what it can do), `read.js` (runs in the page) and `act.js` (does an action, then checks the site's state). Adding a site means adding a folder.
 
