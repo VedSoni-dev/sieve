@@ -1,0 +1,14 @@
+{
+  "id": "threads",
+  "name": "Threads",
+  "home": "https://www.threads.com/",
+  "also": { "following": "https://www.threads.com/following" },
+  "urlPattern": "^https://www\\.threads\\.(com|net)/",
+  "nativeIdFrom": "/post/([\\w-]+)",
+  "signedOutReads": "the public For You feed",
+  "settleMs": 4500,
+  "scrollWaitMs": 2200,
+  "actions": { "like": "Like", "repost": "Repost", "quote": "Quote", "reply": "Reply", "bookmark": "Save" },
+  "likeIcon": "heart",
+  "imageHosts": [".cdninstagram.com", ".fbcdn.net"]
+}

@@ -32,6 +32,7 @@ const ICON = {
   save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>',
   open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 16.9l-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/></svg>',
   thumb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 10v10H4V10zM7 10l4-7c1.5 0 2.5 1 2.2 2.6L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/></svg>',
 };
 
@@ -84,7 +85,7 @@ function renderPost(p) {
       <div class="acts">
         ${can(p, 'reply') ? `<button class="act reply${cls('reply', p.replied)}" data-act="reply" title="${esc(meta(p).actions.reply)} (r)">${ICON.reply}<span class="n">${k(p.replies)}</span><span class="wait">sending</span></button>` : p.replies ? `<a class="act" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open the thread">${ICON.reply}<span class="n">${k(p.replies)}</span></a>` : ''}
         ${can(p, 'repost') || can(p, 'quote') ? `<button class="act repost${cls('repost', reposted)}${pend.quote ? ' pending' : ''}" data-act="repost-menu" title="${esc([meta(p).actions.repost, meta(p).actions.quote].filter(Boolean).join(' or '))}">${ICON.repost}<span class="n">${k(p.reposts)}</span><span class="wait">sending</span></button>` : ''}
-        ${can(p, 'like') ? `<button class="act like like-${esc(meta(p).likeIcon || 'heart')}${cls('like', liked)}" data-act="like" title="${esc(meta(p).actions.like)} (l)">${ICON[meta(p).likeIcon === 'arrow' ? 'arrow' : meta(p).likeIcon === 'thumb' ? 'thumb' : 'like']}<span class="n">${k(p.likes)}</span><span class="wait">sending</span></button>` : ''}
+        ${can(p, 'like') ? `<button class="act like like-${esc(meta(p).likeIcon || 'heart')}${cls('like', liked)}" data-act="like" title="${esc(meta(p).actions.like)} (l)">${ICON[['arrow', 'thumb', 'star'].includes(meta(p).likeIcon) ? meta(p).likeIcon : 'like']}<span class="n">${k(p.likes)}</span><span class="wait">sending</span></button>` : ''}
         ${can(p, 'bookmark') ? `<button class="act save${cls('bookmark', saved)}" data-act="bookmark" title="${esc(meta(p).actions.bookmark)} (b)">${ICON.save}<span class="lbl">${saved ? '' : ''}</span><span class="wait">sending</span></button>` : ''}
         <a class="act open" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open on ${esc(meta(p).name)} (o)">${ICON.open}</a>
       </div>
@@ -106,7 +107,21 @@ function drawTabs() {
   $('#tabs').hidden = ids.length < 2;
   $('#tabs').innerHTML = [['all', 'All', posts.length], ...ids.map((id) => [id, SRC[id].name, counts[id] || 0])]
     .map(([id, name, n]) => `<button class="tab${tab === id ? ' on' : ''}" data-tab="${esc(id)}">${esc(name)} <span>${n}</span></button>`).join('');
+  const el = $('#tabs'), on = el.querySelector('.tab.on');
+  if (on) el.scrollLeft = Math.max(0, on.offsetLeft - el.clientWidth / 2 + on.offsetWidth / 2);
+  fadeTabs();
 }
+// soft edges on the tab strip when there are more sources than fit
+function fadeTabs() { const el = $('#tabs'); el.classList.toggle('fade-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 2); el.classList.toggle('fade-l', el.scrollLeft > 2); }
+$('#tabs').addEventListener('scroll', fadeTabs, { passive: true });
+addEventListener('resize', fadeTabs);
+// some sites' image hosts refuse to be shown on other pages: retry through Sieve's own image proxy
+document.addEventListener('error', (e) => {
+  const img = e.target;
+  if (img.tagName !== 'IMG' || img.dataset.proxied || !/^https:/.test(img.src)) return;
+  img.dataset.proxied = '1';
+  img.src = `/img?u=${encodeURIComponent(img.src)}`;
+}, true);
 $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; store.set('sieve.tab', tab); drawTabs(); draw(); scrollTo({ top: 0 }); });
 function draw() {
   const list = visible();

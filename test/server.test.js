@@ -131,3 +131,11 @@ test('seen lists every judged id; a refresh updates counts but keeps tags; feed 
   assert.deepEqual([only.posts[0].handle, only.posts[0].likes, only.posts[0].tags[0]], ['pg', 90, 'web']);
   assert.equal((await call('GET', '/api/sources')).body.sources.find(s => s.id === 'hn').status.signedIn, false);
 });
+
+test('image proxy: a source can allow every subdomain of its CDN, nothing else', async () => {
+  await call('GET', '/api/sources'); // loads sources/*/source.json image hosts
+  const st = async (u) => (await fetch(base + '/img?u=' + encodeURIComponent(u))).status;
+  assert.notEqual(await st('https://sieve-test-nonexistent.cdninstagram.com/x.jpg'), 403); // allowed (threads lists ".cdninstagram.com"); upstream fails → 502
+  assert.equal(await st('https://cdninstagram.com.evil.example/x.jpg'), 403);
+  assert.equal(await st('https://evil.example/x.jpg'), 403);
+});

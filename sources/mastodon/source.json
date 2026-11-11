@@ -1,0 +1,14 @@
+{
+  "id": "mastodon",
+  "name": "Mastodon",
+  "home": "https://mastodon.social/home",
+  "instanceNote": "On another server? Change home and urlPattern to your server, and add its media host to imageHosts.",
+  "urlPattern": "^https://mastodon\\.social/",
+  "nativeIdFrom": "/@[^/]+/(\\d+)",
+  "signedOutReads": "the server's trending posts",
+  "readMode": "json",
+  "settleMs": 3000,
+  "actions": { "like": "Favorite", "repost": "Boost", "reply": "Reply", "bookmark": "Bookmark" },
+  "likeIcon": "star",
+  "imageHosts": ["files.mastodon.social"]
+}

@@ -6,7 +6,7 @@
 
 <sub>Demo with public accounts (NASA, NatGeo, The Verge, NYT, Anthropic, OpenAI) and the rule “hide anything about AI”. [MP4](docs/demo.mp4)</sub>
 
-Your coding agent scrolls your feeds for you (X, Reddit and more), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
+Your coding agent scrolls your feeds for you (X, Reddit, YouTube, Bluesky, LinkedIn, Hacker News, Threads and Mastodon), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
 
 It works the other way too. When you like, upvote, repost, comment or save in your feed, the agent does it on the real site for you, so each site's algorithm learns what you actually want. You never open those sites again.
 
@@ -25,6 +25,8 @@ It works the other way too. When you like, upvote, repost, comment or save in yo
 | **Bluesky** | your Following timeline (Bluesky's own API, with the page's session), or the public Discover feed when signed out | like, repost, quote, reply, save | reads verified signed out (119 posts from Discover); all buttons found on a real post; acting needs you signed in, and Sieve locks the buttons until then |
 | **LinkedIn** | your home feed, through LinkedIn's own feed API with the page's session (the 2026 web feed hides post ids in the page) | like, comment, repost, save | live: reads verified (56 posts: images, articles, documents, network context, 14 ads flagged); like, repost, Save and the comment editor found signed in. LinkedIn restricts accounts that automate, so Sieve acts only on your clicks and stops at the first warning |
 | **Hacker News** | the front page, `/newest` or `/best` (`--url`); job posts flagged as ads | upvote, comment, favorite | reads verified signed out (90 stories, 1 job post flagged); upvote, favorite and the comment form found on a real story; upvoting and commenting need you signed in |
+| **Threads** | your For You feed (Threads' own feed JSON, caught as the page loads it); signed out, the public For You feed stops after about five posts | like, repost, quote, reply, save | reads verified signed out (5 posts with photos, counts and times); Like, Comment, Repost and More (Save) found on a real post; a full feed and acting need you signed in |
+| **Mastodon** | your home timeline on your server (Mastodon's own API with the page's session), or the server's trending posts when signed out; set your server in `sources/mastodon/source.json` | favorite, boost, reply, bookmark | reads verified signed out (80 trending posts: photos, video, quotes, link cards, content warnings); a real status read back through the API; acting needs you signed in |
 
 Turn sources on and off in the **Sources** panel. Each one is a folder in `sources/<id>/`: `source.json` (what it is and what it can do), `read.js` (runs in the page) and `act.js` (does an action, then checks the site's state). Adding a site means adding a folder.
 

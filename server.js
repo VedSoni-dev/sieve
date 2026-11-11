@@ -21,6 +21,8 @@ const ACTIONS = new Set(['like', 'unlike', 'repost', 'unrepost', 'quote', 'reply
 const SRC_DIR = path.join(__dirname, 'sources');
 const SOURCES = {};
 const IMAGE_HOSTS = new Set(['pbs.twimg.com', 'abs.twimg.com']);
+// a source lists exact hosts, or ".cdninstagram.com" for any subdomain of a CDN
+const imageHostOk = (h) => IMAGE_HOSTS.has(h) || [...IMAGE_HOSTS].some((x) => x.startsWith('.') && h.endsWith(x));
 function loadSources() {
   for (const d of fs.readdirSync(SRC_DIR)) {
     const f = path.join(SRC_DIR, d, 'source.json');
@@ -254,7 +256,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/img') {
     let src;
     try { src = new URL(url.searchParams.get('u') || ''); } catch { res.writeHead(400); return res.end(); }
-    if (src.protocol !== 'https:' || !IMAGE_HOSTS.has(src.hostname)) { res.writeHead(403); return res.end(); }
+    if (src.protocol !== 'https:' || !imageHostOk(src.hostname)) { res.writeHead(403); return res.end(); }
     fetch(src, { headers: { 'user-agent': 'sieve-image-proxy' } }).then(async (r) => {
       if (!r.ok) { res.writeHead(r.status); return res.end(); }
       res.writeHead(200, { 'content-type': r.headers.get('content-type') || 'image/jpeg', 'cache-control': 'public, max-age=86400' });
