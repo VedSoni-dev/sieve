@@ -85,3 +85,19 @@ test('image proxy only serves X image hosts', async () => {
   assert.equal((await fetch(base + '/img?u=' + encodeURIComponent('http://pbs.twimg.com/a.jpg'))).status, 403);
   assert.equal((await fetch(base + '/img?u=not-a-url')).status, 400);
 });
+
+test('resift: a rules change can bring hidden posts back and hide kept ones', async () => {
+  await call('POST', '/api/feed', { posts: [P('20', 20000)], hidden: [{ id: '21', reason: 'AI', post: P('21', 21000) }, { id: '22', handle: 'z', text: 'no full post', reason: 'AI' }] });
+  const all = (await call('GET', '/api/all')).body;
+  assert.ok(all.hidden.find(h => h.id === '21').canRestore);
+  assert.equal(all.hidden.find(h => h.id === '22').canRestore, false);
+  const r = await call('POST', '/api/resift', { keep: [{ id: '21', tags: ['frontend'] }, { id: '22' }], hide: [{ id: '20', reason: 'not frontend' }] });
+  assert.equal(r.body.restored, 1);
+  assert.equal(r.body.removed, 1);
+  const feed = (await call('GET', '/api/feed')).body.posts;
+  assert.ok(feed.find(p => p.id === '21' && p.tags[0] === 'frontend'));
+  assert.ok(!feed.find(p => p.id === '20'));
+  const hid = (await call('GET', '/api/hidden')).body.hidden;
+  assert.equal(hid.find(h => h.id === '20').reason, 'not frontend');
+  assert.equal(hid[0].post, undefined); // the UI list stays light
+});

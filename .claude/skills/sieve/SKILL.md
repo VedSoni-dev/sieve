@@ -44,7 +44,7 @@ Each round takes a fresh look at the top of the timeline. When the user presses 
 - Read the whole post, any quoted post, and the link card title. Decide **keep** or **hide** by their rules. Use real judgement, not keyword matching: "no AI" hides a post about LLM benchmarks even if it never says "AI", and keeps a post about a painter named Al.
 - Ads and promoted posts (`promoted: true`): hide with reason `ad` unless the rules say otherwise.
 - For a kept post, push the object exactly as the reader returned it, plus `"tags": ["1-3 short topics"]`.
-- Hidden: `{"id", "handle", "text": first 200 chars, "reason": "2-5 words, e.g. 'AI', 'engagement bait'"}`.
+- Hidden: the **whole post object** plus `"reason": "2-5 words, e.g. 'AI', 'engagement bait'"`. Keeping the whole post lets it come back if the rules change.
 - If the text alone is ambiguous ("Is this management?", "matter of time", image-only posts), **look at the images** before deciding: open them (the post's `images[]` URLs) or take a screenshot of the post. The picture is often the actual content.
 - Still unsure: keep it with the tag `unsure`.
 
@@ -59,6 +59,13 @@ Rules for acting, with no exceptions:
 - Quote and reply text goes out **exactly** as they wrote it.
 - Wait about 2 seconds between actions. If X shows a rate limit, a captcha or a warning, stop, mark the action failed with what X said, and tell the user.
 - `send`/DM isn't supported. Fail it with "not supported yet".
+
+## When the rules change: re-sift
+`node bin/sieve.js status` shows `rulesAt`. When it's newer than the last round, or the user says they changed their rules:
+1. `node bin/sieve.js agent resifting "re-reading everything with your new rules"`
+2. `node bin/sieve.js all`: every post you've judged, kept and hidden. Re-judge **all** of them against the new rules.
+3. `node bin/sieve.js resift /tmp/resift.json` with `{"keep":[{"id","tags"}], "hide":[{"id","reason"}]}`. Hidden posts with `canRestore: true` come back into the feed; kept ones that now break the rules move to hidden.
+4. Then read fresh posts as usual. A new rule usually means new things are worth keeping, so read deeper (`read 6`).
 
 ## Changing their UI or rules
 - "Change my Sieve UI so …": edit `ui/index.html`, `ui/style.css` and `ui/app.js`. Posts come from `GET /api/feed` and update live via `/api/events`. Keep the action buttons working (they `POST /api/actions`). Tell them to refresh.

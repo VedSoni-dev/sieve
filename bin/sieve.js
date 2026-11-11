@@ -27,7 +27,9 @@ const HELP = `sieve — talk to the Sieve server
   fail <id> "<why>"            mark an action failed
   working <id>                 mark an action in progress
   agent <status> ["note"]      heartbeat: scrolling | acting | idle | paused (send at least every 60s)
-  seen                         ids already in the feed (skip these)`;
+  seen                         ids already in the feed (skip these)
+  all                          everything judged so far (kept + hidden), to re-judge after the rules change
+  resift <file|json|->         apply fresh decisions: {"keep":[{"id","tags"}], "hide":[{"id","reason"}]}`;
 
 (async () => {
   const [cmd, ...a] = process.argv.slice(2);
@@ -42,6 +44,8 @@ const HELP = `sieve — talk to the Sieve server
     case 'working': return out(await call('POST', `/api/actions/${a[0]}`, { status: 'working' }));
     case 'agent': return out(await call('POST', '/api/agent', { status: a[0] || 'scrolling', note: a.slice(1).join(' ') }));
     case 'seen': { const f = await call('GET', '/api/feed?limit=500'); const h = await call('GET', '/api/hidden'); return out([...f.posts.map(p => p.id), ...h.hidden.map(x => x.id)].join('\n')); }
+    case 'all': return out(await call('GET', '/api/all'));
+    case 'resift': return out(await call('POST', '/api/resift', readJSON(a[0] || '-')));
     default: return out(HELP);
   }
 })();

@@ -25,6 +25,7 @@ const db = {
   hidden: load('hidden.json', []),         // {id, handle, text, reason, at}
   actions: load('actions.json', []),       // queue + history
   agent: { status: 'offline', note: '', lastSeen: 0, ...load('agent.json', {}) },
+  rulesAt: (() => { try { return fs.statSync(path.join(DATA, 'rules.md')).mtimeMs; } catch { return 0; } })(),
 };
 if (!fs.existsSync(file('rules.md'))) fs.copyFileSync(path.join(__dirname, 'rules.example.md'), file('rules.md'));
 
@@ -62,9 +63,17 @@ function upsertPosts(incoming) {
   return fresh;
 }
 
+// A hidden entry keeps the whole post (when the agent sends it) so a later rules change can bring it back.
+function hideEntry(h, post) {
+  const full = post || (h.post && typeof h.post === 'object' ? h.post : (Array.isArray(h.text) ? h : null));
+  const plain = full ? (full.plain || (full.text || []).map(s => s.v).join('')) : h.text;
+  return { id: String(h.id), handle: h.handle || full?.handle || '', text: String(plain || '').slice(0, 280), reason: String(h.reason || 'your rules'), at: Date.now(), post: full || null };
+}
+
 const routes = {
   'GET /api/state': () => ({
     agent: agentState(),
+    rulesAt: db.rulesAt || 0,
     counts: { posts: db.posts.length, hidden: db.hidden.length, pending: db.actions.filter(a => a.status === 'pending').length },
   }),
   'GET /api/feed': (q) => {
@@ -74,7 +83,7 @@ const routes = {
   'POST /api/feed': (b) => {
     const fresh = upsertPosts(Array.isArray(b.posts) ? b.posts : []);
     const hid = (Array.isArray(b.hidden) ? b.hidden : []).filter(h => h && h.id && !db.hidden.some(x => x.id === h.id))
-      .map(h => ({ id: String(h.id), handle: h.handle || '', text: String(h.text || '').slice(0, 280), reason: String(h.reason || 'your rules'), at: Date.now() }));
+      .map(h => hideEntry(h));
     db.hidden = [...hid, ...db.hidden].slice(0, MAX_POSTS);
     save('hidden.json', db.hidden);
     if (fresh.length) emit('posts', fresh);
@@ -83,11 +92,40 @@ const routes = {
     emit('refresh', (b.posts || []).map(p => p.id));
     return { added: fresh.length, hidden: hid.length, total: db.posts.length };
   },
-  'GET /api/hidden': () => ({ hidden: db.hidden.slice(0, 300) }),
+  'GET /api/hidden': () => ({ hidden: db.hidden.slice(0, 300).map(({ post, ...h }) => h) }),
+  // Everything the agent has judged so far, for re-judging after the rules change.
+  'GET /api/all': () => ({
+    rulesAt: db.rulesAt || 0,
+    kept: db.posts.map(p => ({ id: p.id, handle: p.handle, text: (p.text || []).map(s => s.v).join(''), card: p.card?.title || '', quote: (p.quote?.text || []).map(s => s.v).join(''), images: (p.images || []).length, tags: p.tags || [] })),
+    hidden: db.hidden.map(h => ({ id: h.id, handle: h.handle, text: h.text, reason: h.reason, canRestore: !!h.post })),
+  }),
+  // The agent's fresh decisions after a rules change: {keep:[{id, tags}], hide:[{id, reason}]}.
+  'POST /api/resift': (b) => {
+    const keptById = new Map(db.posts.map(p => [p.id, p]));
+    const hidById = new Map(db.hidden.map(h => [h.id, h]));
+    let restored = 0, removed = 0;
+    for (const h of b.hide || []) {
+      const id = String(h.id), p = keptById.get(id);
+      if (p) { keptById.delete(id); hidById.set(id, { ...hideEntry({ id, reason: h.reason }, p) }); removed++; }
+      else if (hidById.has(id)) hidById.get(id).reason = String(h.reason || hidById.get(id).reason);
+    }
+    for (const k of b.keep || []) {
+      const id = String(k.id);
+      if (keptById.has(id)) { if (k.tags) keptById.get(id).tags = k.tags; continue; }
+      const h = hidById.get(id);
+      if (h?.post) { keptById.set(id, { ...h.post, tags: k.tags || h.post.tags || [], seenAt: Date.now(), pending: {} }); hidById.delete(id); restored++; }
+    }
+    db.posts = [...keptById.values()].sort((a, b) => (b.time || b.seenAt) - (a.time || a.seenAt));
+    db.hidden = [...hidById.values()].sort((a, b) => b.at - a.at);
+    save('feed.json', db.posts); save('hidden.json', db.hidden);
+    emit('resift', { restored, removed, kept: db.posts.length, hidden: db.hidden.length });
+    return { restored, removed, kept: db.posts.length, hidden: db.hidden.length };
+  },
   'GET /api/rules': () => ({ text: fs.readFileSync(file('rules.md'), 'utf8') }),
   'PUT /api/rules': (b) => {
     fs.writeFileSync(file('rules.md'), String(b.text ?? ''));
-    emit('rules', { text: b.text });
+    db.rulesAt = Date.now(); save('agent.json', db.agent);
+    emit('rules', { text: b.text, rulesAt: db.rulesAt });
     return { ok: true };
   },
   'POST /api/actions': (b) => {

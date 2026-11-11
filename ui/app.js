@@ -147,7 +147,7 @@ function setAgent(a) {
   const pill = $('#agentPill');
   pill.classList.toggle('on', !!a.online);
   pill.classList.toggle('acting', a.online && a.status === 'acting');
-  const label = { scrolling: 'Reading X', acting: 'Acting on X', idle: 'Watching', paused: 'Paused' }[a.status] || a.status;
+  const label = { scrolling: 'Reading X', acting: 'Acting on X', resifting: 'Re-sifting', idle: 'Watching', paused: 'Paused' }[a.status] || a.status;
   pill.querySelector('span').textContent = a.online ? label : 'Agent offline';
   pill.title = a.online ? (a.note || '') : 'Start your agent: "use the sieve skill: scroll my X"';
 }
@@ -166,7 +166,7 @@ function openDrawer(id) {
 $('#scrim').onclick = () => openDrawer(null);
 document.querySelectorAll('[data-close]').forEach(b => (b.onclick = () => openDrawer(null)));
 $('#rulesBtn').onclick = async () => { $('#rulesText').value = (await api('GET', '/api/rules')).text; openDrawer('rules'); setTimeout(() => $('#rulesText').focus(), 300); };
-$('#rulesSave').onclick = async () => { await api('PUT', '/api/rules', { text: $('#rulesText').value }); toast('Saved. Your agent uses these from its next scroll.'); openDrawer(null); };
+$('#rulesSave').onclick = async () => { await api('PUT', '/api/rules', { text: $('#rulesText').value }); toast('Saved. Your agent is re-sifting your feed with the new rules.'); openDrawer(null); };
 $('#rulesText').onkeydown = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('#rulesSave').click(); };
 $('#hiddenBtn').onclick = async () => {
   const { hidden } = await api('GET', '/api/hidden');
@@ -223,6 +223,12 @@ ev.addEventListener('refresh', async (m) => {
   for (const p of all) if (ids.has(p.id) && byId.has(p.id)) { Object.assign(byId.get(p.id), p); redrawOne(p.id); }
 });
 ev.addEventListener('hidden', () => counts());
+ev.addEventListener('resift', async (m) => {
+  const r = JSON.parse(m.data);
+  await refresh(); counts();
+  scrollTo({ top: 0, behavior: 'smooth' });
+  toast(`Re-sifted with your new rules: ${r.restored} came back, ${r.removed} sifted out.`);
+});
 ev.addEventListener('action', (m) => {
   const a = JSON.parse(m.data);
   if (a.status !== 'done' && a.status !== 'failed') return;
