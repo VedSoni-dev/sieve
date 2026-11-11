@@ -1,0 +1,13 @@
+{
+  "id": "tiktok",
+  "name": "TikTok",
+  "home": "https://www.tiktok.com/foryou",
+  "also": { "following": "https://www.tiktok.com/following" },
+  "urlPattern": "^https://www\\.tiktok\\.com/",
+  "nativeIdFrom": "/(?:video|photo)/(\\d+)",
+  "signedOutReads": "the first few For You videos",
+  "settleMs": 4500,
+  "actions": { "like": "Like", "reply": "Comment", "bookmark": "Favorite" },
+  "likeIcon": "heart",
+  "imageHosts": [".tiktokcdn-us.com", ".tiktokcdn.com", ".ttwstatic.com"]
+}

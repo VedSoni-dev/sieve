@@ -78,9 +78,9 @@ const one = (v, n) => String(v || '').replace(/\s+/g, ' ').trim().slice(0, n);
 const words = (segs) => Array.isArray(segs) ? segs.map((x) => x.v || '').join('') : String(segs || '');
 // One line per post: what the agent needs to judge it, nothing more.
 function line(key, p) {
-  const flags = [p.promoted && 'AD', p.nsfw && 'NSFW', p.spoiler && 'SPOILER', p.video && 'video', (p.images || []).length && `${p.images.length} img`].filter(Boolean);
+  const flags = [p.promoted && 'AD', p.aiGenerated && 'labeled AI-generated', p.nsfw && 'NSFW', p.spoiler && 'SPOILER', p.video && (p.duration ? `video ${p.duration}` : 'video'), (p.images || []).length && `${p.images.length} img`].filter(Boolean);
   const where = p.community ? String(p.community).replace(/^(?!r\/)/, 'r/') : p.channel || p.name || p.handle || '';
-  const body = [p.title, words(p.text), p.quote && `[quoting ${p.quote.handle || ''}: ${words(p.quote.text)}]`, p.card?.title && !(p.title && p.card.title === p.title) && `[link: ${p.card.title}]`].filter(Boolean).join(' · ');
+  const body = [p.title, p.flair && `[${p.flair}]`, words(p.text), p.quote && `[quoting ${p.quote.handle || ''}: ${words(p.quote.text)}]`, p.card?.title && !(p.title && p.card.title === p.title) && `[link: ${p.card.title}]`].filter(Boolean).join(' · ');
   return `${key}  ${flags.length ? `[${flags.join(', ')}] ` : ''}${one(where, 40)} — ${one(body, 260)}`;
 }
 

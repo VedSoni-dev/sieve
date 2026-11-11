@@ -6,7 +6,7 @@
 
 <sub>Demo with public accounts (NASA, NatGeo, The Verge, NYT, Anthropic, OpenAI) and the rule “hide anything about AI”. [MP4](docs/demo.mp4)</sub>
 
-Your coding agent scrolls your feeds for you (X, Reddit, YouTube, Bluesky, LinkedIn, Hacker News, Threads and Mastodon), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
+Your coding agent scrolls your feeds for you (X, Reddit, YouTube, TikTok, Threads, Bluesky, Mastodon, LinkedIn, Hacker News and Lobsters), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
 
 It works the other way too. When you like, upvote, repost, comment or save in your feed, the agent does it on the real site for you, so each site's algorithm learns what you actually want. You never open those sites again.
 
@@ -27,6 +27,8 @@ It works the other way too. When you like, upvote, repost, comment or save in yo
 | **Hacker News** | the front page, `/newest` or `/best` (`--url`); job posts flagged as ads | upvote, comment, favorite | reads verified signed out (90 stories, 1 job post flagged); upvote, favorite and the comment form found on a real story; upvoting and commenting need you signed in |
 | **Threads** | your For You feed (Threads' own feed JSON, caught as the page loads it); signed out, the public For You feed stops after about five posts | like, repost, quote, reply, save | reads verified signed out (5 posts with photos, counts and times); Like, Comment, Repost and More (Save) found on a real post; a full feed and acting need you signed in |
 | **Mastodon** | your home timeline on your server (Mastodon's own API with the page's session), or the server's trending posts when signed out; set your server in `sources/mastodon/source.json` | favorite, boost, reply, bookmark | reads verified signed out (80 trending posts: photos, video, quotes, link cards, content warnings); a real status read back through the API; acting needs you signed in |
+| **TikTok** | your For You (or Following) feed, from TikTok's own item data as the page loads it; ads flagged, TikTok's "AI-generated" label passed to the agent; signed out, TikTok shows two or three videos before its login wall | like, comment, favorite | reads verified signed out (3 videos: cover, duration, views, likes); Like, Favorite and Comment found on a real video with their state; the video is paused and muted before any action; a full feed and acting need you signed in |
+| **Lobsters** | the front page, `/newest` or `/active`, with each story's tags | upvote, comment, save | reads verified signed out (25 stories with tags); Upvote found on a real story; acting needs a Lobsters account (invite-only) |
 
 Turn sources on and off in the **Sources** panel. Each one is a folder in `sources/<id>/`: `source.json` (what it is and what it can do), `read.js` (runs in the page) and `act.js` (does an action, then checks the site's state). Adding a site means adding a folder.
 

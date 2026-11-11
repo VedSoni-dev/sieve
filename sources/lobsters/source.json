@@ -1,0 +1,15 @@
+{
+  "id": "lobsters",
+  "name": "Lobsters",
+  "home": "https://lobste.rs/",
+  "also": { "newest": "https://lobste.rs/newest", "active": "https://lobste.rs/active" },
+  "urlPattern": "^https://lobste\\.rs/",
+  "postUrl": "https://lobste.rs/s/{id}",
+  "nativeIdFrom": "/s/(\\w+)",
+  "handlePrefix": "by ",
+  "signedOutReads": "everything (Lobsters is public)",
+  "settleMs": 1500,
+  "actions": { "like": "Upvote", "reply": "Comment", "bookmark": "Save" },
+  "likeIcon": "arrow",
+  "imageHosts": ["lobste.rs"]
+}
