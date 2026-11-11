@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Sieve server: the bridge between your UI (localhost) and your agent (browser use on real X).
+// Sieve server: the bridge between your UI (localhost) and your agent (browser use on your real feeds:
+// X, Reddit and every other source in sources/).
 //   agent → POST /api/feed       posts it kept (and ones it hid, with a reason)
 //   you   → POST /api/actions    like / repost / quote / reply / bookmark / more
 //   agent → GET  /api/actions    picks them up, does them on real X, reports back
@@ -15,6 +16,14 @@ const UI = path.join(__dirname, 'ui');
 const MAX_POSTS = 2000;
 const ACTIONS = new Set(['like', 'unlike', 'repost', 'unrepost', 'quote', 'reply', 'bookmark', 'unbookmark', 'more']);
 
+// Sources: one folder each in sources/ (source.json says what it is and what it can do).
+const SRC_DIR = path.join(__dirname, 'sources');
+const SOURCES = Object.fromEntries(fs.readdirSync(SRC_DIR).filter((d) => fs.existsSync(path.join(SRC_DIR, d, 'source.json')))
+  .map((d) => { const j = JSON.parse(fs.readFileSync(path.join(SRC_DIR, d, 'source.json'), 'utf8')); return [j.id, j]; }));
+const IMAGE_HOSTS = new Set(['pbs.twimg.com', 'abs.twimg.com', ...Object.values(SOURCES).flatMap((s) => s.imageHosts || [])]);
+const sourceOf = (p) => p?.source || (/^\d+$/.test(String(p?.id)) ? 'x' : String(p?.id || '').split(':')[0]);
+const supports = (src, type) => type === 'more' || !SOURCES[src] || Object.keys(SOURCES[src].actions || {}).includes(type.replace(/^un/, ''));
+
 fs.mkdirSync(DATA, { recursive: true });
 const file = (n) => path.join(DATA, n);
 const load = (n, d) => { try { return JSON.parse(fs.readFileSync(file(n), 'utf8')); } catch { return d; } };
@@ -25,6 +34,7 @@ const db = {
   hidden: load('hidden.json', []),         // {id, handle, text, reason, at}
   actions: load('actions.json', []),       // queue + history
   agent: { status: 'offline', note: '', lastSeen: 0, ...load('agent.json', {}) },
+  sources: { enabled: { x: true }, status: {}, ...load('sources.json', {}) }, // enabled[id], status[id] = {signedIn, at, read}
   rulesAt: (() => { try { return fs.statSync(path.join(DATA, 'rules.md')).mtimeMs; } catch { return 0; } })(),
 };
 if (!fs.existsSync(file('rules.md'))) fs.copyFileSync(path.join(__dirname, 'rules.example.md'), file('rules.md'));
@@ -51,8 +61,9 @@ function upsertPosts(incoming) {
   const byId = new Map(db.posts.map(p => [p.id, p]));
   const fresh = [];
   for (const p of incoming) {
-    if (!p || !p.id || !/^\d+$/.test(String(p.id))) continue;
-    if (!p.time) p.time = Number((BigInt(p.id) >> 22n) + 1288834974657n); // Snowflake id → creation time
+    if (!p || !p.id || !/^[\w:.~-]{1,120}$/.test(String(p.id))) continue;
+    p.source = sourceOf(p);
+    if (!p.time && p.source === 'x' && /^\d+$/.test(String(p.id))) p.time = Number((BigInt(p.id) >> 22n) + 1288834974657n); // Snowflake id → creation time
     const prev = byId.get(p.id);
     if (prev) Object.assign(prev, { ...p, seenAt: prev.seenAt, pending: prev.pending }); // refresh counts / liked state
     else { const np = { ...p, seenAt: Date.now(), pending: {} }; byId.set(p.id, np); fresh.push(np); }
@@ -67,7 +78,7 @@ function upsertPosts(incoming) {
 function hideEntry(h, post) {
   const full = post || (h.post && typeof h.post === 'object' ? h.post : (Array.isArray(h.text) ? h : null));
   const plain = full ? (full.plain || (full.text || []).map(s => s.v).join('')) : h.text;
-  return { id: String(h.id), handle: h.handle || full?.handle || '', text: String(plain || '').slice(0, 280), reason: String(h.reason || 'your rules'), at: Date.now(), post: full || null };
+  return { id: String(h.id), source: sourceOf(full || h), handle: h.handle || full?.handle || '', text: String((full?.title ? full.title + ' — ' : '') + (plain || '')).slice(0, 280), reason: String(h.reason || 'your rules'), at: Date.now(), post: full || null };
 }
 
 const routes = {
@@ -75,12 +86,27 @@ const routes = {
     agent: agentState(),
     rulesAt: db.rulesAt || 0,
     counts: { posts: db.posts.length, hidden: db.hidden.length, pending: db.actions.filter(a => a.status === 'pending').length },
+    bySource: Object.fromEntries(Object.keys(SOURCES).map((id) => [id, { kept: db.posts.filter((p) => sourceOf(p) === id).length, hidden: db.hidden.filter((h) => sourceOf(h.post || h) === id).length }])),
   }),
+  'GET /api/sources': () => ({
+    sources: Object.values(SOURCES).map((s) => ({ ...s, enabled: !!db.sources.enabled[s.id], status: db.sources.status[s.id] || null })),
+  }),
+  'PUT /api/sources': (b) => {
+    if (!SOURCES[b.id]) throw Object.assign(new Error(`unknown source ${b.id}`), { code: 400 });
+    db.sources.enabled[b.id] = !!b.enabled;
+    save('sources.json', db.sources);
+    emit('sources', {});
+    return { ok: true };
+  },
   'GET /api/feed': (q) => {
     const limit = Math.min(500, Number(q.limit) || 200);
     return { posts: db.posts.slice(0, limit), total: db.posts.length };
   },
   'POST /api/feed': (b) => {
+    if (b.source && SOURCES[b.source]) {
+      db.sources.status[b.source] = { signedIn: b.signedIn !== false, at: Date.now(), read: (b.posts || []).length + (b.hidden || []).length };
+      save('sources.json', db.sources); emit('sources', {});
+    }
     const fresh = upsertPosts(Array.isArray(b.posts) ? b.posts : []);
     const hid = (Array.isArray(b.hidden) ? b.hidden : []).filter(h => h && h.id && !db.hidden.some(x => x.id === h.id))
       .map(h => hideEntry(h));
@@ -96,8 +122,8 @@ const routes = {
   // Everything the agent has judged so far, for re-judging after the rules change.
   'GET /api/all': () => ({
     rulesAt: db.rulesAt || 0,
-    kept: db.posts.map(p => ({ id: p.id, handle: p.handle, text: (p.text || []).map(s => s.v).join(''), card: p.card?.title || '', quote: (p.quote?.text || []).map(s => s.v).join(''), images: (p.images || []).length, tags: p.tags || [] })),
-    hidden: db.hidden.map(h => ({ id: h.id, handle: h.handle, text: h.text, reason: h.reason, canRestore: !!h.post })),
+    kept: db.posts.map(p => ({ id: p.id, source: sourceOf(p), handle: p.handle, title: p.title || '', community: p.community || '', text: (p.text || []).map(s => s.v).join(''), card: p.card?.title || '', quote: (p.quote?.text || []).map(s => s.v).join(''), images: (p.images || []).length, tags: p.tags || [] })),
+    hidden: db.hidden.map(h => ({ id: h.id, source: sourceOf(h.post || h), handle: h.handle, text: h.text, reason: h.reason, canRestore: !!h.post })),
   }),
   // The agent's fresh decisions after a rules change: {keep:[{id, tags}], hide:[{id, reason}]}.
   'POST /api/resift': (b) => {
@@ -133,7 +159,9 @@ const routes = {
     if (b.type !== 'more' && !b.postId) throw Object.assign(new Error('postId required'), { code: 400 });
     if ((b.type === 'quote' || b.type === 'reply') && !String(b.text || '').trim()) throw Object.assign(new Error('text required'), { code: 400 });
     const post = db.posts.find(p => p.id === b.postId);
-    const a = { id: crypto.randomUUID().slice(0, 8), type: b.type, postId: b.postId || null, url: b.url || post?.url || null,
+    const src = post ? sourceOf(post) : (b.source || null);
+    if (src && !supports(src, b.type)) throw Object.assign(new Error(`${SOURCES[src]?.name || src} has no ${b.type}`), { code: 400 });
+    const a = { id: crypto.randomUUID().slice(0, 8), type: b.type, source: src, postId: b.postId || null, url: b.url || post?.url || null,
                 text: b.text ? String(b.text).slice(0, 280) : undefined, status: 'pending', createdAt: Date.now() };
     // Collapse toggles: a like followed by an unlike before the agent got to it cancels out.
     const opposite = { like: 'unlike', unlike: 'like', repost: 'unrepost', unrepost: 'repost', bookmark: 'unbookmark', unbookmark: 'bookmark' }[a.type];
@@ -209,12 +237,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Image proxy so the UI can dither X's images on a canvas (X's CDN doesn't allow cross-origin pixel reads).
-  // Only X's image hosts, only GET, cached by the browser for a day.
+  // Image proxy so the UI can dither images on a canvas (the sites' CDNs don't allow cross-origin pixel reads).
+  // Only the image hosts the sources list (sources/*/source.json → imageHosts), only GET, cached for a day.
   if (url.pathname === '/img') {
     let src;
     try { src = new URL(url.searchParams.get('u') || ''); } catch { res.writeHead(400); return res.end(); }
-    if (src.protocol !== 'https:' || !/^(pbs|abs)\.twimg\.com$/.test(src.hostname)) { res.writeHead(403); return res.end(); }
+    if (src.protocol !== 'https:' || !IMAGE_HOSTS.has(src.hostname)) { res.writeHead(403); return res.end(); }
     fetch(src, { headers: { 'user-agent': 'sieve-image-proxy' } }).then(async (r) => {
       if (!r.ok) { res.writeHead(r.status); return res.end(); }
       res.writeHead(200, { 'content-type': r.headers.get('content-type') || 'image/jpeg', 'cache-control': 'public, max-age=86400' });
@@ -251,4 +279,4 @@ const server = http.createServer((req, res) => {
 if (require.main === module) {
   server.listen(PORT, '127.0.0.1', () => console.log(`sieve: http://localhost:${PORT}  (data: ${DATA})`));
 }
-module.exports = { server, routes, db };
+module.exports = { server, routes, db, SOURCES };

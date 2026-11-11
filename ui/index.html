@@ -20,6 +20,7 @@
     <div class="stat" id="stat"><b id="keptN">0</b> kept <span class="sep">/</span> <button id="hiddenBtn"><b id="hiddenN">0</b> sifted out</button></div>
     <div class="spacer"></div>
     <button class="chip" id="ditherBtn" aria-pressed="true" title="Dither images">Dither</button>
+    <button class="chip" id="sourcesBtn">Sources</button>
     <button class="chip" id="rulesBtn">Rules</button>
     <button class="agent" id="agentPill" title=""><i aria-hidden="true"></i><span>Agent offline</span></button>
   </div>
@@ -30,6 +31,7 @@
     <span class="mono">template</span> Your agent can redesign this page: “make it a three-column magazine”, “bigger photos”, “add reading time”. It lives in <code>ui/</code>.
     <button class="note-x" id="noteX" aria-label="Hide">×</button>
   </p>
+  <nav class="tabs" id="tabs" hidden></nav>
   <button class="newpill" id="newPill" hidden>New posts</button>
   <div id="empty" class="empty" hidden></div>
   <div id="posts"></div>
@@ -46,6 +48,12 @@
   <p class="dim">Plain words. Your agent re-reads these before every scroll and uses judgement, not keywords.</p>
   <textarea id="rulesText" spellcheck="false"></textarea>
   <div class="drawer-foot"><span class="mono dim" id="rulesHint">⌘↵ to save</span><button class="primary" id="rulesSave">Save rules</button></div>
+</aside>
+
+<aside class="drawer" id="sources" aria-hidden="true">
+  <div class="drawer-head"><h2>Sources</h2><button class="x" data-close aria-label="Close">×</button></div>
+  <p class="dim">Your agent reads the ones that are on, in your own signed-in browser, and does your clicks there.</p>
+  <div id="sourceList"></div>
 </aside>
 
 <aside class="drawer" id="hidden" aria-hidden="true">

@@ -1,7 +1,7 @@
-// Runs INSIDE an x.com page (via your browser tool's "evaluate JS"). Returns the
+// Runs INSIDE an x.com page: evaluate `(<this file>)({})` with your browser tool. Returns the
 // posts currently rendered, in a compact shape Sieve understands. X dropped its
 // data-testid hooks in 2026, so this reads semantic structure instead.
-(() => {
+((opts = {}) => {
   const abs = (h) => { try { return new URL(h, location.href).href; } catch { return h; } };
   const own = (root, sel) => [...root.querySelectorAll(sel)].filter(el => el.closest('article') === root);
   const tidy = (s) => String(s || '').replace(/\s+\n/g, '\n').trim();
@@ -77,10 +77,10 @@
     };
   }
 
-  const posts = [...document.querySelectorAll('article')].filter(a => !a.parentElement.closest('article')).map(post).filter(p => p.id);
+  const posts = [...document.querySelectorAll('article')].filter(a => !a.parentElement.closest('article')).map(post).filter(p => p.id).map(p => ({ ...p, source: 'x' }));
   return {
     url: location.href,
     signedIn: !document.querySelector('a[href*="mode=login"]') && !/\/login|\/i\/flow/.test(location.pathname),
     posts,
   };
-})()
+})

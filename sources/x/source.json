@@ -1,0 +1,18 @@
+{
+  "id": "x",
+  "name": "X",
+  "home": "https://x.com/home",
+  "urlPattern": "^https://(x|twitter)\\.com/",
+  "postUrl": "https://x.com/i/status/{id}",
+  "signedOutReads": "public profiles only",
+  "readMode": "scroll",
+  "actions": {
+    "like": "Like",
+    "repost": "Repost",
+    "quote": "Quote",
+    "reply": "Reply",
+    "bookmark": "Bookmark"
+  },
+  "likeIcon": "heart",
+  "nativeIdFrom": "status/(\\d+)"
+}

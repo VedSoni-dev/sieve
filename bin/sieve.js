@@ -20,7 +20,8 @@ const HELP = `sieve — talk to the Sieve server
 
   status                       agent + counts
   rules                        print the user's rules (read before every scroll)
-  push <file|json|->           send posts: {"posts":[...], "hidden":[{"id","handle","text","reason"}]}
+  sources                      the sources the user turned on (read only these), with last sign-in status
+  push <file|json|->           send posts: {"source":"reddit","signedIn":true,"posts":[...], "hidden":[{...post, "reason"}]}
   actions                      pending actions the user clicked (do these on real X)
   wait [seconds]               block until the user clicks something (or timeout, default 55s), then print pending actions
   done <id>                    mark an action done
@@ -36,6 +37,7 @@ const HELP = `sieve — talk to the Sieve server
   switch (cmd) {
     case 'status': return out(await call('GET', '/api/state'));
     case 'rules': return out((await call('GET', '/api/rules')).text);
+    case 'sources': return out((await call('GET', '/api/sources')).sources.map((x) => ({ id: x.id, name: x.name, enabled: x.enabled, actions: x.actions, status: x.status })));
     case 'push': return out(await call('POST', '/api/feed', readJSON(a[0] || '-')));
     case 'actions': return out((await call('GET', '/api/actions?status=pending')).actions);
     case 'wait': return out((await call('GET', `/api/actions/wait?timeout=${Number(a[0]) || 55}`)).actions);

@@ -101,3 +101,20 @@ test('resift: a rules change can bring hidden posts back and hide kept ones', as
   assert.equal(hid.find(h => h.id === '20').reason, 'not frontend');
   assert.equal(hid[0].post, undefined); // the UI list stays light
 });
+
+test('multi-source: reddit posts, per-source actions, source status, image hosts', async () => {
+  const rp = { id: 'reddit:abc12', source: 'reddit', url: 'https://www.reddit.com/r/x/comments/abc12/t/', handle: 'u1', name: 'r/x', title: 'A title', time: 50000, text: [] };
+  const r = await call('POST', '/api/feed', { source: 'reddit', signedIn: true, posts: [rp] });
+  assert.equal(r.body.added, 1);
+  const feed = (await call('GET', '/api/feed')).body.posts;
+  assert.equal(feed.find(p => p.id === 'reddit:abc12').source, 'reddit');
+  assert.equal(feed.find(p => p.id === '20' || p.id === '3')?.source, 'x'); // legacy numeric ids are X
+  assert.equal((await call('POST', '/api/actions', { type: 'repost', postId: 'reddit:abc12' })).status, 400); // Reddit has no repost
+  const up = await call('POST', '/api/actions', { type: 'like', postId: 'reddit:abc12' });
+  assert.equal(up.body.source, 'reddit');
+  const src = (await call('GET', '/api/sources')).body.sources;
+  assert.ok(src.find(s => s.id === 'reddit').status.signedIn);
+  await call('PUT', '/api/sources', { id: 'reddit', enabled: true });
+  assert.ok((await call('GET', '/api/sources')).body.sources.find(s => s.id === 'reddit').enabled);
+  assert.equal((await fetch(base + '/img?u=' + encodeURIComponent('https://i.redd.it/x.jpg'))).status !== 403, true);
+});

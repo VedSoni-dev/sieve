@@ -1,6 +1,7 @@
-// sieve — template UI. renderPost() draws every post your agent kept.
-// Like / repost / quote / reply / bookmark queue an action; your agent does it on real X,
-// and the button settles when X confirms.
+// sieve — template UI. renderPost() draws every post your agent kept, from every source.
+// Like / repost / quote / reply / bookmark queue an action; your agent does it on the real site
+// (X, Reddit, …) and the button settles when the site confirms. Each source says which actions
+// it has and what it calls them (sources/<id>/source.json, served at /api/sources).
 const $ = (s, el = document) => el.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
@@ -30,7 +31,16 @@ const ICON = {
   like: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20s-7.5-4.6-7.5-10.2A4.2 4.2 0 0 1 12 7.2a4.2 4.2 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20Z"/></svg>',
   save: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/></svg>',
   open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 4l7 8h-4.5v8h-5v-8H5z"/></svg>',
+  thumb: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 10v10H4V10zM7 10l4-7c1.5 0 2.5 1 2.2 2.6L12.6 9H19a2 2 0 0 1 2 2.3l-1.2 7A2 2 0 0 1 17.8 20H7"/></svg>',
 };
+
+// ---------- sources (from /api/sources) ----------
+let SRC = {};
+const srcOf = (p) => p.source || (/^\d+$/.test(String(p.id)) ? 'x' : String(p.id).split(':')[0]);
+const meta = (p) => SRC[srcOf(p)] || { id: srcOf(p), name: srcOf(p), actions: { like: 'Like', reply: 'Reply', bookmark: 'Bookmark', repost: 'Repost', quote: 'Quote' }, likeIcon: 'heart' };
+const can = (p, a) => !!meta(p).actions?.[a];
+async function loadSources() { SRC = Object.fromEntries((await api('GET', '/api/sources')).sources.map((x) => [x.id, x])); }
 
 // ---------- rendering (change freely) ----------
 const fig = (src, { pixel = 2, reveal = true, extra = '' } = {}) => src
@@ -47,9 +57,10 @@ function renderText(segs) {
 }
 function renderBody(p) {
   const imgs = (p.images || []).slice(0, 4);
-  return `${p.text?.length ? `<div class="text">${renderText(p.text)}</div>` : ''}
+  const long = (p.text || []).reduce((n, x) => n + String(x.v || '').length, 0) > 650;
+  return `${p.text?.length ? `<div class="text${long ? ' long' : ''}">${renderText(p.text)}</div>${long ? '<button class="readmore more-toggle" data-more>more</button>' : ''}` : ''}
     ${p.truncated ? `<a class="readmore" href="${esc(p.url)}" target="_blank" rel="noopener">Read the whole post →</a>` : ''}
-    ${imgs.length ? `<div class="media n${imgs.length}">${imgs.map((src, i) => fig(src, { pixel: 2, extra: p.video && i === 0 ? `<a class="play" href="${esc(p.url)}" target="_blank" rel="noopener">▶ Play on X</a>` : '' })).join('')}</div>` : ''}
+    ${imgs.length ? `<div class="media n${imgs.length}${p.nsfw || p.spoiler ? ' veiled' : ''}"${p.nsfw || p.spoiler ? ` data-veil="${p.nsfw ? 'NSFW' : 'Spoiler'}"` : ''}>${imgs.map((src, i) => fig(src, { pixel: 2, extra: p.video && i === 0 ? `<a class="play" href="${esc(p.url)}" target="_blank" rel="noopener">▶ Play on ${esc(meta(p).name)}</a>` : '' })).join('')}</div>` : ''}
     ${p.card ? `<a class="card" href="${esc(p.card.url)}" target="_blank" rel="noopener">${p.card.img ? fig(p.card.img, { pixel: 2, reveal: false }) : '<span></span>'}<span class="c"><span class="d">${esc(p.card.domain || host(p.card.url))}</span><span class="ti">${esc(p.card.title)}</span></span></a>` : ''}`;
 }
 function renderPost(p) {
@@ -61,16 +72,17 @@ function renderPost(p) {
     <div class="av">${fig(p.avatar?.replace('_normal', '_bigger'), { pixel: 1.5, reveal: false })}</div>
     <div class="body">
       ${p.repostedBy ? `<div class="ctx">↻ ${esc(p.repostedBy)} reposted</div>` : ''}
-      <div class="who"><b>${esc(p.name)}</b><span class="h">@${esc(p.handle)}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>
+      <div class="who"><span class="src src-${esc(srcOf(p))}">${esc(meta(p).name)}</span><b>${esc(p.name)}</b><span class="h">${p.community ? 'u/' : '@'}${esc(p.handle)}</span><a class="t" href="${esc(p.url)}" target="_blank" rel="noopener" title="${p.time ? esc(new Date(p.time).toLocaleString()) : ''}">${esc(ago(p.time, p.when))}</a>
         ${(p.tags || []).length ? `<span class="tags">${p.tags.slice(0, 2).map(t => `<span class="tag">${esc(t)}</span>`).join('')}</span>` : ''}</div>
+      ${p.title ? `<h3 class="ptitle"><a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>${p.flair ? ` <span class="flair">${esc(p.flair)}</span>` : ''}</h3>` : ''}
       ${renderBody(p)}
       ${p.quote ? `<div class="quote"><div class="who"><b>${esc(p.quote.name)}</b><span class="h">@${esc(p.quote.handle)}</span></div>${renderBody(p.quote)}</div>` : ''}
       <div class="acts">
-        <button class="act reply${cls('reply', p.replied)}" data-act="reply" title="Reply (r)">${ICON.reply}<span class="n">${k(p.replies)}</span><span class="wait">sending</span></button>
-        <button class="act repost${cls('repost', reposted)}${pend.quote ? ' pending' : ''}" data-act="repost-menu" title="Repost or quote">${ICON.repost}<span class="n">${k(p.reposts)}</span><span class="wait">sending</span></button>
-        <button class="act like${cls('like', liked)}" data-act="like" title="Like (l)">${ICON.like}<span class="n">${k(p.likes)}</span><span class="wait">sending</span></button>
-        <button class="act save${cls('bookmark', saved)}" data-act="bookmark" title="Bookmark (b)">${ICON.save}<span class="wait">sending</span></button>
-        <a class="act open" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open on X (o)">${ICON.open}</a>
+        ${can(p, 'reply') ? `<button class="act reply${cls('reply', p.replied)}" data-act="reply" title="${esc(meta(p).actions.reply)} (r)">${ICON.reply}<span class="n">${k(p.replies)}</span><span class="wait">sending</span></button>` : p.replies ? `<a class="act" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open the thread">${ICON.reply}<span class="n">${k(p.replies)}</span></a>` : ''}
+        ${can(p, 'repost') || can(p, 'quote') ? `<button class="act repost${cls('repost', reposted)}${pend.quote ? ' pending' : ''}" data-act="repost-menu" title="${esc([meta(p).actions.repost, meta(p).actions.quote].filter(Boolean).join(' or '))}">${ICON.repost}<span class="n">${k(p.reposts)}</span><span class="wait">sending</span></button>` : ''}
+        ${can(p, 'like') ? `<button class="act like like-${esc(meta(p).likeIcon || 'heart')}${cls('like', liked)}" data-act="like" title="${esc(meta(p).actions.like)} (l)">${ICON[meta(p).likeIcon === 'arrow' ? 'arrow' : meta(p).likeIcon === 'thumb' ? 'thumb' : 'like']}<span class="n">${k(p.likes)}</span><span class="wait">sending</span></button>` : ''}
+        ${can(p, 'bookmark') ? `<button class="act save${cls('bookmark', saved)}" data-act="bookmark" title="${esc(meta(p).actions.bookmark)} (b)">${ICON.save}<span class="lbl">${saved ? '' : ''}</span><span class="wait">sending</span></button>` : ''}
+        <a class="act open" href="${esc(p.url)}" target="_blank" rel="noopener" title="Open on ${esc(meta(p).name)} (o)">${ICON.open}</a>
       </div>
       <div class="slot"></div>
     </div>
@@ -78,13 +90,25 @@ function renderPost(p) {
 }
 
 // ---------- state ----------
-let posts = [], sel = -1;
+let posts = [], sel = -1, tab = store.get('sieve.tab') || 'all';
 const byId = new Map();
-function setPosts(list) { posts = list; byId.clear(); for (const p of posts) byId.set(p.id, p); draw(); }
+const visible = () => (tab === 'all' ? posts : posts.filter((p) => srcOf(p) === tab));
+function setPosts(list) { posts = list; byId.clear(); for (const p of posts) byId.set(p.id, p); drawTabs(); draw(); }
+function drawTabs() {
+  const counts = {};
+  for (const p of posts) counts[srcOf(p)] = (counts[srcOf(p)] || 0) + 1;
+  const ids = Object.keys(SRC).filter((id) => SRC[id].enabled || counts[id]);
+  if (tab !== 'all' && !ids.includes(tab)) tab = 'all';
+  $('#tabs').hidden = ids.length < 2;
+  $('#tabs').innerHTML = [['all', 'All', posts.length], ...ids.map((id) => [id, SRC[id].name, counts[id] || 0])]
+    .map(([id, name, n]) => `<button class="tab${tab === id ? ' on' : ''}" data-tab="${esc(id)}">${esc(name)} <span>${n}</span></button>`).join('');
+}
+$('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; store.set('sieve.tab', tab); drawTabs(); draw(); scrollTo({ top: 0 }); });
 function draw() {
-  $('#posts').innerHTML = posts.map(renderPost).join('');
-  $('#empty').hidden = posts.length > 0;
-  if (!posts.length) $('#empty').innerHTML = `Nothing sifted yet.<br><span class="mono dim">Tell your agent: “use the sieve skill: scroll my x”</span>`;
+  const list = visible();
+  $('#posts').innerHTML = list.map(renderPost).join('');
+  $('#empty').hidden = list.length > 0;
+  if (!list.length) $('#empty').innerHTML = posts.length ? `Nothing from ${esc(SRC[tab]?.name || tab)} yet.` : `Nothing sifted yet.<br><span class="mono dim">Tell your agent: “use the sieve skill: scroll my feeds”</span>`;
   window.dither.scan();
   sel = -1;
 }
@@ -106,16 +130,17 @@ async function queue(type, p, text) {
     p.pending = { ...(p.pending || {}) };
     if (r.cancelled) delete p.pending[key]; else p.pending[key] = type;
     redrawOne(p.id);
-    if (type === 'quote' || type === 'reply') toast(`Queued. Your agent will ${type} on X.`);
+    if (type === 'quote' || type === 'reply') toast(`Queued. Your agent will ${(meta(p).actions[type] || type).toLowerCase()} on ${meta(p).name}.`);
   } catch (e) { toast(`Couldn't queue that: ${e.message}`); }
 }
 function composer(p, kind) {
   const slot = document.querySelector(`.post[data-id="${CSS.escape(p.id)}"] .slot`);
-  slot.innerHTML = `<form class="composer"><textarea maxlength="280" placeholder="${kind === 'quote' ? 'Add your take…' : `Reply to @${esc(p.handle)}…`}"></textarea>
-    <div class="row"><span class="count">0 / 280 · your agent posts this on X</span><span><button type="button" class="btn-ghost" data-cancel>Cancel</button> <button class="primary">${kind === 'quote' ? 'Quote' : 'Reply'}</button></span></div></form>`;
+  const max = srcOf(p) === 'x' || srcOf(p) === 'bluesky' ? 280 : 4000, where = meta(p).name, verb = meta(p).actions[kind] || (kind === 'quote' ? 'Quote' : 'Reply');
+  slot.innerHTML = `<form class="composer"><textarea maxlength="${max}" placeholder="${kind === 'quote' ? 'Add your take…' : `${esc(verb)} to ${p.community ? 'u/' : '@'}${esc(p.handle)}…`}"></textarea>
+    <div class="row"><span class="count">0 / ${max} · your agent posts this on ${esc(where)}</span><span><button type="button" class="btn-ghost" data-cancel>Cancel</button> <button class="primary">${esc(verb)}</button></span></div></form>`;
   const f = slot.querySelector('form'), ta = f.querySelector('textarea');
   ta.focus();
-  ta.oninput = () => (f.querySelector('.count').textContent = `${ta.value.length} / 280 · your agent posts this on X`);
+  ta.oninput = () => (f.querySelector('.count').textContent = `${ta.value.length} / ${max} · your agent posts this on ${where}`);
   ta.onkeydown = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) f.requestSubmit(); if (e.key === 'Escape') slot.innerHTML = ''; };
   f.querySelector('[data-cancel]').onclick = () => (slot.innerHTML = '');
   f.onsubmit = (e) => { e.preventDefault(); const t = ta.value.trim(); if (!t) return; slot.innerHTML = ''; queue(kind, p, t); };
@@ -128,12 +153,16 @@ function doAct(act, p, anchor) {
   if (act === 'repost-menu') {
     const reposted = isOn(p, 'repost', p.reposted);
     const m = document.createElement('div'); m.className = 'menu';
-    m.innerHTML = `<button data-m="repost">${reposted ? 'Undo repost' : 'Repost'}</button><button data-m="quote">Quote</button>`;
+    m.innerHTML = `${can(p, 'repost') ? `<button data-m="repost">${reposted ? 'Undo ' + esc(meta(p).actions.repost.toLowerCase()) : esc(meta(p).actions.repost)}</button>` : ''}${can(p, 'quote') ? `<button data-m="quote">${esc(meta(p).actions.quote)}</button>` : ''}`;
     m.onclick = (ev) => { ev.stopPropagation(); const w = ev.target.dataset.m; m.remove(); if (w === 'quote') composer(p, 'quote'); else if (w) queue(reposted ? 'unrepost' : 'repost', p); };
     anchor.append(m);
   }
 }
 document.addEventListener('click', (e) => {
+  const more = e.target.closest('[data-more]');
+  if (more) { const t = more.previousElementSibling; const open = t.classList.toggle('open'); more.textContent = open ? 'less' : 'more'; return; }
+  const veil = e.target.closest('.media.veiled');
+  if (veil) { e.preventDefault(); veil.classList.remove('veiled'); return; }
   document.querySelectorAll('.menu').forEach(m => { if (!m.contains(e.target)) m.remove(); });
   const b = e.target.closest('[data-act]');
   if (!b) return;
@@ -147,7 +176,7 @@ function setAgent(a) {
   const pill = $('#agentPill');
   pill.classList.toggle('on', !!a.online);
   pill.classList.toggle('acting', a.online && a.status === 'acting');
-  const label = { scrolling: 'Reading X', acting: 'Acting on X', resifting: 'Re-sifting', idle: 'Watching', paused: 'Paused' }[a.status] || a.status;
+  const label = { scrolling: 'Reading', acting: 'Acting', resifting: 'Re-sifting', idle: 'Watching', paused: 'Paused' }[a.status] || a.status;
   pill.querySelector('span').textContent = a.online ? label : 'Agent offline';
   pill.title = a.online ? (a.note || '') : 'Start your agent: "use the sieve skill: scroll my X"';
 }
@@ -168,6 +197,23 @@ document.querySelectorAll('[data-close]').forEach(b => (b.onclick = () => openDr
 $('#rulesBtn').onclick = async () => { $('#rulesText').value = (await api('GET', '/api/rules')).text; openDrawer('rules'); setTimeout(() => $('#rulesText').focus(), 300); };
 $('#rulesSave').onclick = async () => { await api('PUT', '/api/rules', { text: $('#rulesText').value }); toast('Saved. Your agent is re-sifting your feed with the new rules.'); openDrawer(null); };
 $('#rulesText').onkeydown = (e) => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) $('#rulesSave').click(); };
+async function drawSources() {
+  await loadSources();
+  $('#sourceList').innerHTML = Object.values(SRC).map((x) => {
+    const st = x.status;
+    const line = !st ? 'not read yet' : `${st.signedIn ? 'signed in' : '<b class="warn">signed out</b>'} · read ${st.read} · ${ago(st.at)} ago`;
+    return `<label class="srow"><input type="checkbox" data-src="${esc(x.id)}" ${x.enabled ? 'checked' : ''}>
+      <span class="sname">${esc(x.name)}</span><span class="sline">${line}</span>
+      <span class="sacts">${Object.values(x.actions || {}).map((v) => `<i>${esc(v)}</i>`).join('')}</span></label>`;
+  }).join('');
+}
+$('#sourcesBtn').onclick = async () => { await drawSources(); openDrawer('sources'); };
+$('#sourceList').addEventListener('change', async (e) => {
+  const c = e.target.closest('[data-src]'); if (!c) return;
+  await api('PUT', '/api/sources', { id: c.dataset.src, enabled: c.checked });
+  toast(`${SRC[c.dataset.src].name} ${c.checked ? 'on: your agent reads it from its next round' : 'off'}`);
+  await drawSources(); drawTabs();
+});
 $('#hiddenBtn').onclick = async () => {
   const { hidden } = await api('GET', '/api/hidden');
   const reasons = {};
@@ -223,6 +269,7 @@ ev.addEventListener('refresh', async (m) => {
   for (const p of all) if (ids.has(p.id) && byId.has(p.id)) { Object.assign(byId.get(p.id), p); redrawOne(p.id); }
 });
 ev.addEventListener('hidden', () => counts());
+ev.addEventListener('sources', async () => { await loadSources(); drawTabs(); });
 ev.addEventListener('resift', async (m) => {
   const r = JSON.parse(m.data);
   await refresh(); counts();
@@ -245,12 +292,12 @@ ev.addEventListener('action', (m) => {
     }
     redrawOne(p.id);
   }
-  if (a.status === 'failed') toast(`Your agent couldn't ${a.type}: ${a.error || 'unknown error'}`);
-  else if (a.type !== 'more') toast(`Done on X: ${a.type}`);
+  if (a.status === 'failed') toast(`Your agent couldn't ${((SRC[a.source]?.actions || {})[a.type.replace(/^un/, '')] || a.type).toLowerCase()}: ${a.error || 'unknown error'}`);
+  else if (a.type !== 'more') { const src = SRC[a.source] || {}; const base = a.type.replace(/^un/, ''); toast(`Done on ${src.name || 'X'}: ${a.type.startsWith('un') ? 'undid ' : ''}${(src.actions?.[base] || a.type).toLowerCase()}`); }
 });
 $('#newPill').onclick = () => { setPosts(window._next || posts); unseen = 0; $('#newPill').hidden = true; scrollTo({ top: 0, behavior: 'smooth' }); };
 
-refresh();
+loadSources().then(refresh);
 counts();
 setInterval(counts, 15000);
 setInterval(() => document.querySelectorAll('.post .t').forEach(t => { const p = byId.get(t.closest('.post').dataset.id); if (p) t.textContent = ago(p.time, p.when); }), 60000);

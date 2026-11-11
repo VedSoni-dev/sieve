@@ -76,6 +76,8 @@ code { font: .8rem var(--mono); background: var(--paper-2); padding: .1em .35em;
 .text .u, .text .hash { color: var(--ink-2); text-decoration: underline; text-decoration-color: var(--rule); text-underline-offset: 3px; }
 .text .l { color: var(--ink); text-decoration: underline; text-decoration-color: var(--signal); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
 .text .l small { font: .62rem var(--mono); text-transform: uppercase; color: var(--dim); margin-left: 4px; text-decoration: none; display: inline-block; }
+.text.long:not(.open) { display: -webkit-box; -webkit-line-clamp: 9; -webkit-box-orient: vertical; overflow: hidden; }
+.more-toggle { background: none; border: 0; padding: 0; cursor: pointer; }
 .readmore { display: inline-block; margin-top: 4px; font: .7rem var(--mono); text-transform: uppercase; letter-spacing: .03em; color: var(--signal); }
 
 /* ---------- dithered media ---------- */
@@ -132,6 +134,34 @@ body.nodither figure.dither canvas { visibility: hidden; }
 .more { font: .72rem var(--mono); text-transform: uppercase; letter-spacing: .04em; padding: 11px 18px; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--rule); }
 .more:hover { box-shadow: inset 0 0 0 1px var(--ink); }
 .foot p { margin-top: 18px; }
+
+/* ---------- sources ---------- */
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin: 14px 0 2px; position: sticky; top: 64px; z-index: 5; padding: 6px 0; background: color-mix(in srgb, var(--paper) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.tabs[hidden] { display: none; }
+.tab { font: .72rem var(--mono); text-transform: uppercase; letter-spacing: .03em; color: var(--dim); padding: 7px 11px; border-radius: 7px; }
+.tab span { opacity: .6; margin-left: 3px; }
+.tab:hover { color: var(--ink); background: var(--paper-2); }
+.tab.on { color: var(--paper); background: var(--ink); }
+.src { font: .6rem var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--dim); border: 1px solid var(--rule); border-radius: 4px; padding: 1px 5px; align-self: center; }
+.src-reddit { color: #ff4500; border-color: color-mix(in srgb, #ff4500 40%, transparent); }
+.src-youtube { color: #e5302b; border-color: color-mix(in srgb, #e5302b 40%, transparent); }
+.src-bluesky { color: #1185fe; border-color: color-mix(in srgb, #1185fe 40%, transparent); }
+.src-hn { color: #ff6600; border-color: color-mix(in srgb, #ff6600 40%, transparent); }
+.src-linkedin { color: #0a66c2; border-color: color-mix(in srgb, #0a66c2 40%, transparent); }
+.ptitle { margin: 6px 0 2px; font: 500 1.3rem/1.3 var(--serif); letter-spacing: -.01em; }
+.ptitle a:hover { text-decoration: underline; text-decoration-color: var(--signal); }
+.flair { font: .62rem var(--mono); text-transform: uppercase; letter-spacing: .04em; color: var(--ink-2); background: var(--paper-2); padding: 2px 6px; border-radius: 4px; vertical-align: middle; }
+.media.veiled { position: relative; cursor: pointer; }
+.media.veiled figure { filter: blur(26px); }
+.media.veiled::after { content: attr(data-veil) " · click to show"; position: absolute; inset: 0; display: grid; place-items: center; font: .74rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--paper); background: rgba(0,0,0,.25); }
+.act.like-arrow.on { color: #ff4500; } .act.like-arrow.on svg { fill: #ff4500; }
+.act.like-thumb.on { color: var(--ink); } .act.like-thumb.on svg { fill: currentColor; }
+.srow { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); cursor: pointer; }
+.srow input { grid-row: span 3; width: 18px; height: 18px; accent-color: var(--ink); }
+.sname { font: 500 1.1rem var(--serif); }
+.sline { font: .7rem var(--mono); text-transform: uppercase; letter-spacing: .03em; color: var(--dim); }
+.sline .warn { color: var(--signal); font-weight: 500; }
+.sacts i { font: normal .62rem var(--mono); text-transform: uppercase; color: var(--ink-2); background: var(--paper-2); padding: 2px 6px; border-radius: 4px; margin-right: 4px; }
 
 /* ---------- drawers: slide in from the right, out to the right ---------- */
 .scrim { position: fixed; inset: 0; z-index: 25; background: rgba(10, 9, 8, .28); animation: fade .2s ease both; }

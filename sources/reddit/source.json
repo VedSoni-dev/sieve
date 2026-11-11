@@ -1,0 +1,17 @@
+{
+  "id": "reddit",
+  "name": "Reddit",
+  "home": "https://www.reddit.com/",
+  "urlPattern": "^https://(www\\.|old\\.)?reddit\\.com/",
+  "postUrl": "https://old.reddit.com/comments/{id}",
+  "nativeIdFrom": "comments/([a-z0-9]+)",
+  "signedOutReads": "public subreddits",
+  "readMode": "json",
+  "actions": {
+    "like": "Upvote",
+    "reply": "Comment",
+    "bookmark": "Save"
+  },
+  "likeIcon": "arrow",
+  "imageHosts": ["i.redd.it", "preview.redd.it", "external-preview.redd.it", "a.thumbs.redditmedia.com", "b.thumbs.redditmedia.com", "styles.redditmedia.com", "www.redditstatic.com"]
+}

@@ -6,14 +6,23 @@
 
 <sub>Demo with public accounts (NASA, NatGeo, The Verge, NYT, Anthropic, OpenAI) and the rule “hide anything about AI”. [MP4](docs/demo.mp4)</sub>
 
-Your coding agent scrolls X for you, in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **your** feed at `localhost:4545`, in a UI you design.
+Your coding agent scrolls your feeds for you (X, Reddit and more), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
 
-It works the other way too. When you like, repost, quote, reply or bookmark in your feed, the agent does it on real X for you, so the algorithm learns what you actually want. You never open X again.
+It works the other way too. When you like, upvote, repost, comment or save in your feed, the agent does it on the real site for you, so each site's algorithm learns what you actually want. You never open those sites again.
 
 ```
- you ──▶ localhost:4545 (your UI) ──clicks──▶ Sieve server ──▶ your agent ──browser use──▶ real X
+ you ──▶ localhost:4545 (your UI) ──clicks──▶ Sieve server ──▶ your agent ──browser use──▶ X, Reddit, …
      ◀── posts you'd actually want  ◀──────── filtered by your rules ◀─────── reads every post
 ```
+
+## Sources
+
+| Source | Reads | Actions it does for you | Status |
+|---|---|---|---|
+| **X** | your home timeline, any profile | like, repost, quote, reply, bookmark | live: reads verified; likes done on real X from Sieve clicks |
+| **Reddit** | your home feed (Best), any subreddit, via Reddit's own JSON in your session | upvote, comment, save | live: reads verified (72 posts); buttons found and state read signed in |
+
+Turn sources on and off in the **Sources** panel. Each one is a folder in `sources/<id>/`: `source.json` (what it is and what it can do), `read.js` (runs in the page) and `act.js` (does an action, then checks the site's state). Adding a site means adding a folder.
 
 ## Quick start
 
@@ -24,9 +33,9 @@ npm start                      # http://localhost:4545  (no dependencies)
 
 Then, in the same folder, tell your coding agent:
 
-> Use the sieve skill: scroll my X
+> Use the sieve skill: scroll my feeds
 
-Sign in to x.com once in the browser your agent uses. The agent never types your password.
+Sign in to each site once in the browser your agent uses. The agent never types your password.
 
 ## Your rules
 
@@ -52,9 +61,9 @@ The template ships as paper and ink. Every photo and avatar is an ordered (Bayer
 
 | Your agent has | How Sieve uses it |
 |---|---|
-| **Aside** | `node bin/x-aside.js read 3` / `node bin/x-aside.js act like <url>`: one command each |
-| Claude in Chrome, Playwright MCP, anything that runs JS | evaluates `x/read.js` in the page; actions per `x/ACTIONS.md` |
-| screenshot-only computer use | follows `x/ACTIONS.md` by sight |
+| **Aside** | `node bin/aside.js read reddit 3`, `node bin/aside.js act reddit like <url>`, `node bin/aside.js probe x <url>` (finds buttons and state, never clicks) |
+| Claude in Chrome, Playwright MCP, anything that runs JS | evaluates `sources/<id>/read.js` in the page; actions follow `sources/<id>/act.js` |
+| screenshot-only computer use | follows `sources/<id>/act.js` by sight |
 
 Claude Code reads `.claude/skills/sieve/SKILL.md`; Codex, Gemini CLI and Cursor read `AGENTS.md`, `GEMINI.md` and `.cursor/rules/sieve.mdc`, which point to the same skill.
 
@@ -82,7 +91,7 @@ The server only listens on 127.0.0.1 and refuses requests from other websites.
 ## Honest notes
 
 - Automating your own account may break X's terms. Sieve acts only on your clicks, at human pace, on your machine.
-- X changes its markup, and serves different versions to different sessions. `x/read.js` and the action steps match by meaning (test-ids, labels, structure), not position, and your agent can fix them when they break.
+- Sites change their markup, and X serves different versions to different sessions. The readers and action steps match by meaning (test-ids, labels, structure, or the site's own JSON), not position, and `aside.js probe` shows quickly when one breaks; your agent can fix it.
 - Not affiliated with X.
 
 MIT
