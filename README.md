@@ -6,7 +6,7 @@
 
 <sub>Demo with public accounts (NASA, NatGeo, The Verge, NYT, Anthropic, OpenAI) and the rule “hide anything about AI”. [MP4](docs/demo.mp4)</sub>
 
-Your coding agent scrolls your feeds for you (X, Reddit, YouTube, TikTok, Threads, Bluesky, Mastodon, LinkedIn, Hacker News and Lobsters), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
+Your coding agent scrolls your feeds for you (X, Reddit, YouTube, TikTok, Threads, Bluesky, Mastodon, Lemmy, LinkedIn, Hacker News and Lobsters), in your own signed-in browser, using browser use. It reads every post, keeps only what your rules allow ("nothing about AI", "no engagement bait"), and puts the rest in **one** feed at `localhost:4545`, in a UI you design.
 
 It works the other way too. When you like, upvote, repost, comment or save in your feed, the agent does it on the real site for you, so each site's algorithm learns what you actually want. You never open those sites again.
 
@@ -21,6 +21,7 @@ It works the other way too. When you like, upvote, repost, comment or save in yo
 |---|---|---|---|
 | **X** | your home timeline, any profile | like, repost, quote, reply, bookmark | live: reads verified; likes done on real X from Sieve clicks |
 | **Reddit** | your home feed (Best), any subreddit, via Reddit's own JSON in your session | upvote, comment, save | live: reads verified (72 posts); buttons found and state read signed in |
+| **Lemmy** | your subscribed communities (Lemmy's own API with the page's session), or your server's Hot posts from every community when signed out; cross-posts of the same link shown once; set your server in `sources/lemmy/source.json` | upvote, comment, save | reads verified signed out (60 posts: photos, link cards, Markdown bodies as clean text); a real post read back through the API; acting needs you signed in |
 | **YouTube** | your home page or subscriptions (`--url …/feed/subscriptions`); ads flagged, Shorts and auto-Mixes skipped | like, comment, watch later | live: reads verified (72 videos); like, Watch later and comment box found signed in; the video is paused and muted before any action |
 | **Bluesky** | your Following timeline (Bluesky's own API, with the page's session), or the public Discover feed when signed out | like, repost, quote, reply, save | reads verified signed out (119 posts from Discover); all buttons found on a real post; acting needs you signed in, and Sieve locks the buttons until then |
 | **LinkedIn** | your home feed, through LinkedIn's own feed API with the page's session (the 2026 web feed hides post ids in the page) | like, comment, repost, save | live: reads verified (56 posts: images, articles, documents, network context, 14 ads flagged); like, repost, Save and the comment editor found signed in. LinkedIn restricts accounts that automate, so Sieve acts only on your clicks and stops at the first warning |

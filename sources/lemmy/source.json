@@ -1,0 +1,15 @@
+{
+  "id": "lemmy",
+  "name": "Lemmy",
+  "home": "https://lemmy.world/",
+  "instanceNote": "On another server? Change home, urlPattern and imageHosts to your server.",
+  "urlPattern": "^https://lemmy\\.world/",
+  "nativeIdFrom": "/post/(\\d+)",
+  "handlePrefix": "u/",
+  "signedOutReads": "the server's Hot posts from every community",
+  "readMode": "json",
+  "settleMs": 2500,
+  "actions": { "like": "Upvote", "reply": "Comment", "bookmark": "Save" },
+  "likeIcon": "arrow",
+  "imageHosts": ["lemmy.world"]
+}
