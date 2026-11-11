@@ -170,7 +170,7 @@ body.nodither figure.dither canvas { visibility: hidden; }
 .act.like-thumb.on { color: var(--ink); } .act.like-thumb.on svg { fill: currentColor; }
 .act.like-star.on { color: #e5a50a; } .act.like-star.on svg { fill: #e5a50a; }
 .srow { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; padding: 14px 0; border-top: 1px solid var(--rule); cursor: pointer; }
-.srow input { grid-row: span 3; width: 18px; height: 18px; accent-color: var(--ink); }
+.srow input { grid-row: span 4; width: 18px; height: 18px; accent-color: var(--ink); }
 .sname { font: 500 1.1rem var(--serif); }
 .sline { font: .7rem var(--mono); text-transform: uppercase; letter-spacing: .03em; color: var(--dim); }
 .sline .warn { color: var(--signal); font-weight: 500; }
@@ -218,3 +218,6 @@ body.nodither figure.dither canvas { visibility: hidden; }
 }
 @media (prefers-reduced-transparency: reduce) { .bar { background: var(--paper); backdrop-filter: none; -webkit-backdrop-filter: none; } }
 @media (prefers-contrast: more) { :root { --rule: var(--ink-2); --dim: var(--ink-2); } }
+
+.srow .signin { font: .64rem var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--signal); margin-left: 8px; text-decoration: none; border-bottom: 1px solid currentColor; }
+.srow .shint { display: block; grid-column: 2; font-size: .8rem; line-height: 1.4; color: var(--dim); margin: 2px 0 4px; }

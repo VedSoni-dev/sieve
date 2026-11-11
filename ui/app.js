@@ -223,8 +223,10 @@ async function drawSources() {
   $('#sourceList').innerHTML = Object.values(SRC).map((x) => {
     const st = x.status;
     const line = !st ? 'not read yet' : `${st.signedIn ? 'signed in' : '<b class="warn">signed out</b>'} · read ${st.read} · ${ago(st.at)} ago`;
+    const out = st && !st.signedIn;
     return `<label class="srow"><input type="checkbox" data-src="${esc(x.id)}" ${x.enabled ? 'checked' : ''}>
-      <span class="sname">${esc(x.name)}</span><span class="sline">${line}</span>
+      <span class="sname">${esc(x.name)}${out ? ` <a class="signin" href="${esc(x.home)}" target="_blank" rel="noopener">Sign in ↗</a>` : ''}</span><span class="sline">${line}</span>
+      ${out ? `<span class="shint">Signed out, your agent reads ${esc(x.signedOutReads || 'what the site shows everyone')}, and your clicks wait. Sign in once in the browser your agent uses.</span>` : ''}
       <span class="sacts">${Object.values(x.actions || {}).map((v) => `<i>${esc(v)}</i>`).join('')}</span></label>`;
   }).join('');
 }
